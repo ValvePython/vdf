@@ -195,31 +195,70 @@ def dump(data, f, **kwargs):
 
 def test():
     tests = [
-                # empty test
-                [ '' , {} ],
-                [ {} ,  '' ],
+        # empty test
+        ['', {}],
+        [{},  ''],
 
-                # simple key and values
-                [ {1:1}, '"1" "1"\n'],
-                [ {"a":"1","b":"2"} , '"a" "1"\n"b" "2"\n' ],
+        # simple key and values
+        [
+            {1: 1},
+            '"1" "1"\n'
+        ],
+        [
+            {"a": "1", "b": "2"},
+            '"a" "1"\n"b" "2"\n'
+        ],
 
-                # nesting
-                [ {"a":{"b":{"c":{"d":"1","e":"2"}}}} , '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n' ],
-                [ '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n"b" "2"' , {"a":{"b":{"c":{"d":"1","e":"2"}}},"b":"2"} ],
+        # nesting
+        [
+            {"a": {"b": {"c": {"d": "1", "e": "2"}}}},
+            '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n'
+        ],
+        [
+            '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n"b" "2"',
+            {"a": {"b": {"c": {"d": "1", "e": "2"}}}, "b": "2"}
+        ],
 
-                # ignoring comment lines
-                [ "//comment text\n//comment", {} ],
-                [ '"a" "b" //comment text', {"a":"b"} ],
-                [ '//comment\n"a" "1"\n"b" "2" //comment' , {"a":"1","b":"2"} ],
-                [ '"a"\n{//comment\n}//comment' , {"a":{}} ],
-                [ '"a" //comment\n{\n}' , {"a":{}} ],
+        # ignoring comment lines
+        [
+            "//comment text\n//comment",
+            {}
+        ],
+        [
+            "//comment text\n//comment",
+            {}
+        ],
+        [
+            '"a" "b" //comment text',
+            {"a": "b"}],
+        [
+            '//comment\n"a" "1"\n"b" "2" //comment',
+            {"a": "1", "b": "2"}
+        ],
+        [
+            '"a"\n{//comment\n}//comment',
+            {"a": {}}
+        ],
+        [
+            '"a" //comment\n{\n}',
+            {"a": {}}
+        ],
 
 
-                # new linesi n value
-                [ r'"a" "xx\"xxx"', {"a":r'xx\"xxx'} ],
-                [ '"a" "xx\\"\nxxx"', {"a":'xx\\"\nxxx'} ],
-                [ '"a" "\n\n\n\n"', {"a":'\n\n\n\n'} ]
-            ]
+        # new linesi n value
+        [
+            r'"a" "xx\"xxx"',
+            {"a": r'xx\"xxx'}
+        ],
+        [
+            '"a" "xx\\"\nxxx"',
+            {"a": 'xx\\"\nxxx'}
+        ],
+        [
+            '"a" "\n\n\n\n"',
+            {"a": '\n\n\n\n'}
+        ],
+    ]
 
     for test, expected in tests:
         out = None
