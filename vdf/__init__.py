@@ -14,7 +14,7 @@ import re
 import sys
 
 # Py2 & Py3 compability
-if sys.version_info.major >= 3:
+if sys.version_info[0] >= 3:
     from io import IOBase as file_type
     string_type = str
     next_method_name = '__next__'
