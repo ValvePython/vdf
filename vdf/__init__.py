@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 # a simple parser for Valve's KeyValue format
 # https://developer.valvesoftware.com/wiki/KeyValues
@@ -7,8 +8,18 @@
 #
 # use at your own risk
 
+__version__ = "1.0"
+
 import re
-from codecs import BOM, BOM_BE, BOM_LE, BOM_UTF8, BOM_UTF16, BOM_UTF16_BE, BOM_UTF16_LE, BOM_UTF32, BOM_UTF32_BE, BOM_UTF32_LE
+import sys
+
+if sys.version_info.major >= 3:
+    from io import IOBase
+else:
+    IOBase = file
+
+from codecs import BOM, BOM_BE, BOM_LE, BOM_UTF8, BOM_UTF16, BOM_UTF16_BE
+from codecs import BOM_UTF16_LE, BOM_UTF32, BOM_UTF32_BE, BOM_UTF32_LE
 
 
 BOMS = [
@@ -33,13 +44,12 @@ BOMS = [
 #
 ###############################################
 
-def parse(a):
-    a_type = type(a)
 
-    if a_type is file:
-        lines = a.readlines()
-    elif a_type is str:
-        lines = a.split('\n')
+def parse(source):
+    if isinstance(source, IOBase):
+        lines = source.readlines()
+    elif isinstance(source, str):
+        lines = source.split('\n')
     else:
         raise ValueError("Expected parametar to be file or str")
 
@@ -47,13 +57,12 @@ def parse(a):
     for bom in BOMS:
         if lines[0][:len(bom)] == bom:
             lines[0] = lines[0][len(bom):]
-            break;
+            break
 
     # init
     obj = dict()
     stack = [obj]
     expect_bracket = False
-    name = ""
 
     re_keyvalue = re.compile(r'^"((?:\\.|[^\\"])*)"[ \t]*"((?:\\.|[^\\"])*)(")?')
     re_key = re.compile(r'^"((?:\\.|[^\\"])*)"')
@@ -87,14 +96,18 @@ def parse(a):
 
                 # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
                 if m:
-                    # if the value is line consume one more line and try to match again, until we get the KeyValue pair
-                    if m.group(3) == None:
-                        line += "\n" + itr.next()
+                    # if the value is line consume one more line and try to match again,
+                    # until we get the KeyValue pair
+                    if m.group(3) is None:
+                        if sys.version_info.major >= 3:
+                            line += "\n" + itr.__next__()
+                        else:
+                            line += "\n" + itr.next()
                         continue
 
                     stack[-1][m.group(1)] = m.group(2)
 
-                # we have a key with value in parenthesis, so we make a new dict obj (one level deep)
+                # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
                 else:
                     m = re_key.match(line)
 
@@ -115,6 +128,16 @@ def parse(a):
 
     return obj
 
+
+def loads(fp):
+    assert isinstance(fp, str)
+    return parse(fp)
+
+
+def load(fp):
+    assert isinstance(fp, IOBase)
+    return parse(fp)
+
 ###############################################
 #
 # Take a dict, reuturns VDF in str buffer
@@ -123,17 +146,19 @@ def parse(a):
 #
 ###############################################
 
-def dump(a, **kwargs):
+
+def dumps(a, **kwargs):
     pretty = kwargs.get("pretty", False)
 
-    if type(pretty) is not bool:
-        raise ValueError("Pretty option is a boolean")
+    if not isinstance(pretty, bool):
+        raise ValueError("Pretty parameter expects boolean value")
 
-    return _dump(a,pretty)
+    return _dump(a, pretty)
 
-def _dump(a,pretty=False,level=0):
-    if type(a) is not dict:
-        raise ValueError("Expected parametar to be dict")
+
+def _dump(a, pretty=False, level=0):
+    if not isinstance(a, dict):
+        raise ValueError("Expected data to be a dict")
 
     indent = "\t"
     buf = ""
@@ -143,12 +168,17 @@ def _dump(a,pretty=False,level=0):
         line_indent = indent * level
 
     for key in a:
-        if type(a[key]) is dict:
-            buf += '%s"%s"\n%s{\n%s%s}\n' % (line_indent, key, line_indent, _dump(a[key],pretty,level+1), line_indent)
+        if isinstance(a[key], dict):
+            buf += '%s"%s"\n%s{\n%s%s}\n' % (line_indent, key, line_indent, _dump(a[key], pretty, level+1), line_indent)
         else:
             buf += '%s"%s" "%s"\n' % (line_indent, key, str(a[key]))
 
     return buf
+
+
+def dump(data, f, **kwargs):
+    with f:
+        f.write(dumps(data, **kwargs))
 
 ###############################################
 #
@@ -185,27 +215,23 @@ def test():
                 [ '"a" "\n\n\n\n"', {"a":'\n\n\n\n'} ]
             ]
 
-    for test,expected in tests:
+    for test, expected in tests:
         out = None
 
         try:
-            if type(test) is dict:
-                out = dump(test)
+            if isinstance(test, dict):
+                out = dumps(test)
             else:
-                out = parse(test)
+                out = loads(test)
         except:
-            print "Test falure (exception):\n\n%s" % str(test)
+            print("Test falure (exception):\n\n%s" % str(test))
             raise
 
-        if cmp(expected,out) != 0:
-            print "Test falure (ouput mismatch):\n\n%s" % str(test)
-            print "\nOutput:\n\n%s" % str(out)
-            print "\nExpected:\n\n%s\n" % str(expected)
+        if expected != out:
+            print("Test falure (ouput mismatch):\n\n%s" % str(test))
+            print("\nOutput:\n\n%s" % str(out))
+            print("\nExpected:\n\n%s\n" % str(expected))
 
             raise Exception("Output differs from expected result")
 
     return True
-
-
-
-

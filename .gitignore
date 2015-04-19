@@ -1,2 +1,3 @@
 dist
-vdf.egg-info
+*.egg-info
+*.pyc
