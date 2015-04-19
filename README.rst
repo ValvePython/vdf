@@ -1,4 +1,4 @@
-|pypi| |license|
+|pypi| |license| |coverage| |master_build|
 
 VDF is Valve's KeyValue text file format
 
@@ -51,5 +51,12 @@ Usage
 
 .. |license| image:: https://img.shields.io/pypi/l/vdf.svg?style=flat&label=license
     :target: https://pypi.python.org/pypi/vdf
-    :alt: Latest version released on PyPi
+    :alt: MIT License
 
+.. |coverage| image:: https://img.shields.io/coveralls/rossengeorgiev/vdf-python/master.svg?style=flat
+    :target: https://coveralls.io/r/rossengeorgiev/vdf-python?branch=master
+    :alt: Test coverage
+
+.. |master_build| image:: https://img.shields.io/travis/rossengeorgiev/vdf-python/master.svg?style=flat&label=master%20build
+    :target: http://travis-ci.org/rossengeorgiev/vdf-python
+    :alt: Build status of master branch

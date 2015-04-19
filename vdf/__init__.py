@@ -8,7 +8,7 @@ from __future__ import print_function
 #
 # use at your own risk
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 import re
 import sys
@@ -18,26 +18,13 @@ if sys.version_info[0] >= 3:
     from io import IOBase as file_type
     string_type = str
     next_method_name = '__next__'
+    BOMS = ['\ufffe', '\ufeff']
 else:
-    file_type = file
+    from StringIO import StringIO
+    file_type = (file, StringIO)
     string_type = basestring
     next_method_name = 'next'
-
-from codecs import BOM, BOM_BE, BOM_LE, BOM_UTF8, BOM_UTF16, BOM_UTF16_BE
-from codecs import BOM_UTF16_LE, BOM_UTF32, BOM_UTF32_BE, BOM_UTF32_LE
-
-BOMS = [
-    BOM,
-    BOM_BE,
-    BOM_LE,
-    BOM_UTF8,
-    BOM_UTF16,
-    BOM_UTF16_BE,
-    BOM_UTF16_LE,
-    BOM_UTF32,
-    BOM_UTF32_BE,
-    BOM_UTF32_LE,
-]
+    BOMS = ['\xff\xfe', '\xfe\xff']
 
 ###############################################
 #
@@ -58,10 +45,11 @@ def parse(source):
         raise ValueError("Expected parametar to be file or str")
 
     # check first line BOM and remove
-    for bom in BOMS:
-        if lines[0][:len(bom)] == bom:
-            lines[0] = lines[0][len(bom):]
-            break
+    if isinstance(lines[0], str):
+        for bom in BOMS:
+            if lines[0].startswith(bom):
+                lines[0] = lines[0][len(bom):]
+                break
 
     # init
     obj = dict()
@@ -148,18 +136,11 @@ def load(fp):
 ###############################################
 
 
-def dumps(a, **kwargs):
-    pretty = kwargs.get("pretty", False)
-
+def dumps(data, pretty=False, level=0):
+    if not isinstance(data, dict):
+        raise ValueError("Expected data to be a dict")
     if not isinstance(pretty, bool):
         raise ValueError("Pretty parameter expects boolean value")
-
-    return _dump(a, pretty)
-
-
-def _dump(a, pretty=False, level=0):
-    if not isinstance(a, dict):
-        raise ValueError("Expected data to be a dict")
 
     indent = "\t"
     buf = ""
@@ -168,115 +149,21 @@ def _dump(a, pretty=False, level=0):
     if pretty:
         line_indent = indent * level
 
-    for key in a:
-        if isinstance(a[key], dict):
+    for key in data:
+        if isinstance(data[key], dict):
             buf += '%s"%s"\n%s{\n%s%s}\n' % (
-                line_indent, key, line_indent, _dump(a[key], pretty, level+1), line_indent
+                line_indent, key, line_indent, dumps(data[key], pretty, level+1), line_indent
             )
         else:
-            buf += '%s"%s" "%s"\n' % (line_indent, key, a[key])
+            buf += '%s"%s" "%s"\n' % (line_indent, key, data[key])
 
     return buf
 
 
-def dump(data, f, **kwargs):
-    assert isinstance(data, dict)
-    assert isinstance(f, file_type)
+def dump(data, fp, pretty=True):
+    if not isinstance(data, dict):
+        raise ValueError("Expected data to be a dict")
+    if not isinstance(fp, file_type):
+        raise ValueError("Expected fp to be file")
 
-    with f:
-        f.write(dumps(data, **kwargs))
-
-###############################################
-#
-# Testing initiative
-#
-###############################################
-
-
-def test():
-    tests = [
-        # empty test
-        ['', {}],
-        [{},  ''],
-
-        # simple key and values
-        [
-            {1: 1},
-            '"1" "1"\n'
-        ],
-        [
-            {"a": "1", "b": "2"},
-            '"a" "1"\n"b" "2"\n'
-        ],
-
-        # nesting
-        [
-            {"a": {"b": {"c": {"d": "1", "e": "2"}}}},
-            '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n'
-        ],
-        [
-            '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n"b" "2"',
-            {"a": {"b": {"c": {"d": "1", "e": "2"}}}, "b": "2"}
-        ],
-
-        # ignoring comment lines
-        [
-            "//comment text\n//comment",
-            {}
-        ],
-        [
-            "//comment text\n//comment",
-            {}
-        ],
-        [
-            '"a" "b" //comment text',
-            {"a": "b"}],
-        [
-            '//comment\n"a" "1"\n"b" "2" //comment',
-            {"a": "1", "b": "2"}
-        ],
-        [
-            '"a"\n{//comment\n}//comment',
-            {"a": {}}
-        ],
-        [
-            '"a" //comment\n{\n}',
-            {"a": {}}
-        ],
-
-
-        # new linesi n value
-        [
-            r'"a" "xx\"xxx"',
-            {"a": r'xx\"xxx'}
-        ],
-        [
-            '"a" "xx\\"\nxxx"',
-            {"a": 'xx\\"\nxxx'}
-        ],
-        [
-            '"a" "\n\n\n\n"',
-            {"a": '\n\n\n\n'}
-        ],
-    ]
-
-    for test, expected in tests:
-        out = None
-
-        try:
-            if isinstance(test, dict):
-                out = dumps(test)
-            else:
-                out = loads(test)
-        except:
-            print("Test falure (exception):\n\n%s" % str(test))
-            raise
-
-        if expected != out:
-            print("Test falure (ouput mismatch):\n\n%s" % str(test))
-            print("\nOutput:\n\n%s" % str(out))
-            print("\nExpected:\n\n%s\n" % str(expected))
-
-            raise Exception("Output differs from expected result")
-
-    return True
+    fp.write(dumps(data, pretty))

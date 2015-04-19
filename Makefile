@@ -19,7 +19,7 @@ init:
 	pip install -r requirements.txt
 
 test:
-	rm -f vdf/*.pyc
+	rm -f vdf/*.pyc tests/*.pyc
 	nosetests --verbosity 2 --with-coverage --cover-package=vdf
 
 pylint:
