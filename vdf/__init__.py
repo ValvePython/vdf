@@ -13,14 +13,18 @@ __version__ = "1.0"
 import re
 import sys
 
+# Py2 & Py3 compability
 if sys.version_info.major >= 3:
-    from io import IOBase
+    from io import IOBase as file_type
+    string_type = str
+    next_method_name = '__next__'
 else:
-    IOBase = file
+    file_type = file
+    string_type = basestring
+    next_method_name = 'next'
 
 from codecs import BOM, BOM_BE, BOM_LE, BOM_UTF8, BOM_UTF16, BOM_UTF16_BE
 from codecs import BOM_UTF16_LE, BOM_UTF32, BOM_UTF32_BE, BOM_UTF32_LE
-
 
 BOMS = [
     BOM,
@@ -46,9 +50,9 @@ BOMS = [
 
 
 def parse(source):
-    if isinstance(source, IOBase):
+    if isinstance(source, file_type):
         lines = source.readlines()
-    elif isinstance(source, str):
+    elif isinstance(source, string_type):
         lines = source.split('\n')
     else:
         raise ValueError("Expected parametar to be file or str")
@@ -99,10 +103,7 @@ def parse(source):
                     # if the value is line consume one more line and try to match again,
                     # until we get the KeyValue pair
                     if m.group(3) is None:
-                        if sys.version_info.major >= 3:
-                            line += "\n" + itr.__next__()
-                        else:
-                            line += "\n" + itr.next()
+                        line += "\n" + getattr(itr, next_method_name)()
                         continue
 
                     stack[-1][m.group(1)] = m.group(2)
@@ -130,12 +131,12 @@ def parse(source):
 
 
 def loads(fp):
-    assert isinstance(fp, str)
+    assert isinstance(fp, string_type)
     return parse(fp)
 
 
 def load(fp):
-    assert isinstance(fp, IOBase)
+    assert isinstance(fp, file_type)
     return parse(fp)
 
 ###############################################
@@ -169,14 +170,19 @@ def _dump(a, pretty=False, level=0):
 
     for key in a:
         if isinstance(a[key], dict):
-            buf += '%s"%s"\n%s{\n%s%s}\n' % (line_indent, key, line_indent, _dump(a[key], pretty, level+1), line_indent)
+            buf += '%s"%s"\n%s{\n%s%s}\n' % (
+                line_indent, key, line_indent, _dump(a[key], pretty, level+1), line_indent
+            )
         else:
-            buf += '%s"%s" "%s"\n' % (line_indent, key, str(a[key]))
+            buf += '%s"%s" "%s"\n' % (line_indent, key, a[key])
 
     return buf
 
 
 def dump(data, f, **kwargs):
+    assert isinstance(data, dict)
+    assert isinstance(f, file_type)
+
     with f:
         f.write(dumps(data, **kwargs))
 
