@@ -20,7 +20,7 @@ init:
 
 test:
 	rm -f vdf/*.pyc tests/*.pyc
-	nosetests --verbosity 2 --with-coverage --cover-package=vdf
+	PYTHONHASHSEED=0 nosetests --verbosity 2 --with-coverage --cover-package=vdf
 
 pylint:
 	pylint -r n -f colorized vdf || true
