@@ -34,7 +34,7 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
     ],
-    keywords='valve vdf parse dump module lib',
+    keywords='valve keyvalue vdf tf2 dota2 csgo',
     packages=['vdf'],
     zip_safe=False,
 )
