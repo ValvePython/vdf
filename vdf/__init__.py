@@ -8,7 +8,7 @@ from __future__ import print_function
 #
 # use at your own risk
 
-__version__ = "1.2"
+__version__ = "1.3"
 
 import re
 import sys
@@ -91,8 +91,11 @@ def parse(source):
 
         # one level back
         if line[0] == "}":
-            stack.pop()
-            continue
+            if len(stack) > 1:
+                stack.pop()
+                continue
+
+            raise SyntaxError("vdf.parse: one too many closing parenthasis")
 
         # parse keyvalue pairs
         if line[0] == '"':

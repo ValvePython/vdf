@@ -167,6 +167,9 @@ class testcase_VDF(unittest.TestCase):
             # invalid syntax
             '"asd" "123"\n"zxc" "333"\n"',
 
+            # one too many closing parenthasis
+            '"asd"\n{\n"zxc" "123"\n}\n}\n}\n}\n',
+
             # unclosed parenthasis
             '"asd"\n{\n"zxc" "333"\n'
         ]
