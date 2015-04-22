@@ -69,8 +69,13 @@ class testcase_helpers_dump(unittest.TestCase):
 class testcase_parse_routine(unittest.TestCase):
     def test_parse_bom_removal(self):
         for mark in vdf.BOMS:
-            result = vdf.loads(mark + "")
-            self.assertEqual(result, {})
+            result = vdf.loads(mark + '"asd" "123"')
+            self.assertEqual(result, {'asd': '123'})
+
+        if sys.version_info[0] is 2:
+            for mark in vdf.BOMS_UNICODE:
+                result = vdf.loads(mark + '"asd" "123"')
+                self.assertEqual(result, {'asd': '123'})
 
     def test_parse_asserts(self):
         for t in [5, 5.5, 1.0j, True, None, (), {}, lambda: 0]:
