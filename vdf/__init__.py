@@ -18,30 +18,20 @@ if sys.version_info[0] >= 3:
     from io import IOBase as file_type
     string_type = str
     next_method_name = '__next__'
-    BOMS = ('\ufffe', '\ufeff')
+    BOMS = '\ufffe\ufeff'
 
     def strip_bom(line):
-        if line.startswith(BOMS):
-            return line[1:]
-        return line
-
+        return line.lstrip(BOMS)
 else:
     from StringIO import StringIO
     file_type = (file, StringIO)
     string_type = basestring
     next_method_name = 'next'
-    BOMS = ('\xff\xfe', '\xfe\xff')
-    BOMS_UNICODE = ['\\ufffe', '\\ufeff']
-    BOMS_UNICODE = tuple(map(lambda x: x.decode('unicode-escape'), BOMS_UNICODE))
+    BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
+    BOMS_UNICODE = '\\ufffe\\ufeff'.decode('unicode-escape')
 
     def strip_bom(line):
-        if isinstance(line, str):
-            if line.startswith(BOMS):
-                return line[2:]
-        else:
-            if line.startswith(BOMS_UNICODE):
-                    return line[1:]
-        return line
+        return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
 
 ###############################################
 #
@@ -61,7 +51,7 @@ def parse(source):
     else:
         raise ValueError("Expected parametar to be file or str")
 
-    # strip anoying BOMS
+    # strip annoying BOMS
     lines[0] = strip_bom(lines[0])
 
     # init
