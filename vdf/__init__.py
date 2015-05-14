@@ -166,7 +166,7 @@ def dumps(data, pretty=False, level=0):
     return buf
 
 
-def dump(data, fp, pretty=True):
+def dump(data, fp, pretty=False):
     if not isinstance(data, dict):
         raise ValueError("Expected data to be a dict")
     if not isinstance(fp, file_type):
