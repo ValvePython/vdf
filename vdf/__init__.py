@@ -43,19 +43,21 @@ else:
 ###############################################
 
 
-def parse(source):
+def parse(source, mapper=dict):
+    if not issubclass(mapper, dict):
+        raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
     if isinstance(source, file_type):
         lines = source.readlines()
     elif isinstance(source, string_type):
         lines = source.split('\n')
     else:
-        raise ValueError("Expected parametar to be file or str")
+        raise ValueError("Expected source to be file or str")
 
     # strip annoying BOMS
     lines[0] = strip_bom(lines[0])
 
     # init
-    obj = dict()
+    obj = mapper()
     stack = [obj]
     expect_bracket = False
 
@@ -111,7 +113,7 @@ def parse(source):
 
                     key = m.group(1)
 
-                    stack[-1][key] = dict()
+                    stack[-1][key] = mapper()
                     stack.append(stack[-1][key])
                     expect_bracket = True
 
@@ -124,14 +126,14 @@ def parse(source):
     return obj
 
 
-def loads(fp):
+def loads(fp, **kwargs):
     assert isinstance(fp, string_type)
-    return parse(fp)
+    return parse(fp, **kwargs)
 
 
-def load(fp):
+def load(fp, **kwargs):
     assert isinstance(fp, file_type)
-    return parse(fp)
+    return parse(fp, **kwargs)
 
 ###############################################
 #

@@ -7,11 +7,15 @@ https://developer.valvesoftware.com/wiki/KeyValues
 The module works just like ``json`` to convert VDF to a dict, and vise-versa.
 
 
-Known Issues
+Poblems & solutions
 ------------
 
-- order is not preserved due to using ``dict``
-- there are known files that contain duplicate keys
+- There are known files that contain duplicate keys. This can be solved by
+  creating a class inherating from `dict` and implementing a way to handle
+  duplicate keys.
+
+- By default the module uses `dict`, so key order is preserved. If key order
+  is important then I suggest using `collections.OrderedDict`. See example.
 
 
 Install
@@ -24,7 +28,7 @@ You can grab the latest release from https://pypi.python.org/pypi/vdf or via ``p
     pip install vdf
 
 
-Usage
+Example usage
 -----------
 
 .. code:: python
@@ -43,6 +47,18 @@ Usage
 
     # dumping dict as vdf to file
     vdf.dump(d, open('file2.txt','w'), pretty=True)
+
+
+Using `OrderedDict` to preserve key order.
+
+.. code:: python
+
+    import vdf
+    from collections import OrderedDict
+
+    # parsing vdf from file or string
+    d = vdf.load(open('file.txt'), mapper=OrderedDict)
+    d = vdf.loads(vdf_text, mapper=OrderedDict)
 
 
 .. |pypi| image:: https://img.shields.io/pypi/v/vdf.svg?style=flat&label=latest%20version
