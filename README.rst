@@ -8,7 +8,7 @@ The module works just like ``json`` to convert VDF to a dict, and vise-versa.
 
 
 Poblems & solutions
-------------
+-------------------
 
 - There are known files that contain duplicate keys. This can be solved by
   creating a class inherating from ``dict`` and implementing a way to handle
@@ -19,7 +19,7 @@ Poblems & solutions
 
 
 Install
------------
+-------
 
 You can grab the latest release from https://pypi.python.org/pypi/vdf or via ``pip``
 
@@ -29,7 +29,7 @@ You can grab the latest release from https://pypi.python.org/pypi/vdf or via ``p
 
 
 Example usage
------------
+-------------
 
 .. code:: python
 
