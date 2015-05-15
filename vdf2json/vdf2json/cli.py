@@ -5,6 +5,7 @@ import sys
 import json
 import vdf
 import codecs
+from collections import OrderedDict
 
 
 def main():
@@ -35,7 +36,7 @@ def main():
     else:
         args.outfile = codecs.getwriter(args.eo)(sys.stdout)
 
-    data = vdf.loads(args.infile.read())
+    data = vdf.loads(args.infile.read(), mapper=OrderedDict)
 
     json.dump(data, args.outfile, indent=4 if args.pretty else 0, ensure_ascii=False)
 

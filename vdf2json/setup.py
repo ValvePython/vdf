@@ -10,7 +10,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='vdf2json',
-    version='1.0',
+    version='1.1',
     description='command line tool for converting VDF to JSON',
     long_description=long_description,
     url='https://github.com/rossengeorgiev/vdf-python',
@@ -33,7 +33,7 @@ setup(
         'Programming Language :: Python :: 3.4',
     ],
     keywords='valve keyvalue vdf tf2 dota2 csgo cli commandline json',
-    install_requires=['vdf>=1.2'],
+    install_requires=['vdf>=1.4'],
     packages=['vdf2json'],
     entry_points={
         'console_scripts': [
