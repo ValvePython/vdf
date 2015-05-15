@@ -1,4 +1,5 @@
 .. code:: text
+
     usage: vdf2json [-h] [-p] [-ei encoding] [-eo encoding] [infile] [outfile]
 
     positional arguments:
