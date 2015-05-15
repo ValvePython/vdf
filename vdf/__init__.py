@@ -51,7 +51,7 @@ def parse(source, mapper=dict):
     elif isinstance(source, string_type):
         lines = source.split('\n')
     else:
-        raise ValueError("Expected source to be file or str")
+        raise TypeError("Expected source to be file or str")
 
     # strip annoying BOMS
     lines[0] = strip_bom(lines[0])
@@ -127,12 +127,12 @@ def parse(source, mapper=dict):
 
 
 def loads(fp, **kwargs):
-    assert isinstance(fp, string_type)
+    assert isinstance(fp, string_type), "Expected a str"
     return parse(fp, **kwargs)
 
 
 def load(fp, **kwargs):
-    assert isinstance(fp, file_type)
+    assert isinstance(fp, file_type), "Expected a file"
     return parse(fp, **kwargs)
 
 ###############################################
@@ -146,9 +146,9 @@ def load(fp, **kwargs):
 
 def dumps(data, pretty=False, level=0):
     if not isinstance(data, dict):
-        raise ValueError("Expected data to be a dict")
+        raise TypeError("Expected data to be a dict or subclass of dict")
     if not isinstance(pretty, bool):
-        raise ValueError("Pretty parameter expects boolean value")
+        raise TypeError("Expected pretty to be bool")
 
     indent = "\t"
     buf = ""
@@ -170,8 +170,8 @@ def dumps(data, pretty=False, level=0):
 
 def dump(data, fp, pretty=False):
     if not isinstance(data, dict):
-        raise ValueError("Expected data to be a dict")
+        raise TypeError("Expected data to be a dict")
     if not isinstance(fp, file_type):
-        raise ValueError("Expected fp to be file")
+        raise TypeError("Expected fp to be file")
 
     fp.write(dumps(data, pretty))

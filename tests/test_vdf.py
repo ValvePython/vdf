@@ -64,12 +64,12 @@ class testcase_helpers_dump(unittest.TestCase):
     def test_routine_dumps_asserts(self):
         for x in [5, 5.5, 1.0j, True, None, (), {}, lambda: 0, sys.stdin, self.f]:
             for y in [5, 5.5, 1.0j, None, [], (), {}, lambda: 0, sys.stdin, self.f]:
-                self.assertRaises(ValueError, vdf.dumps, x, y)
+                self.assertRaises(TypeError, vdf.dumps, x, y)
 
     def test_routine_dump_asserts(self):
         for x in [5, 5.5, 1.0j, True, None, (), {}, lambda: 0, sys.stdin, self.f]:
             for y in [5, 5.5, 1.0j, True, None, [], (), {}, lambda: 0]:
-                self.assertRaises(ValueError, vdf.dump, x, y)
+                self.assertRaises(TypeError, vdf.dump, x, y)
 
     def test_routine_dump_writing(self):
         class CustomDict(dict):
@@ -96,7 +96,7 @@ class testcase_routine_parse(unittest.TestCase):
 
     def test_parse_source_asserts(self):
         for t in [5, 5.5, 1.0j, True, None, (), {}, lambda: 0]:
-            self.assertRaises(ValueError, vdf.parse, t)
+            self.assertRaises(TypeError, vdf.parse, t)
 
     def test_parse_mapper_assert(self):
         self.assertRaises(TypeError, vdf.parse, "", mapper=list)
