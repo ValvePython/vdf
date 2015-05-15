@@ -8,7 +8,7 @@ from __future__ import print_function
 #
 # use at your own risk
 
-__version__ = "1.3"
+__version__ = "1.4"
 
 import re
 import sys
