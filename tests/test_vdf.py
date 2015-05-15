@@ -183,6 +183,24 @@ class testcase_VDF(unittest.TestCase):
             else:
                 self.assertEqual(vdf.loads(test), expected)
 
+    def test_dumps_pretty_output(self):
+        tests = [
+            [
+                {'1': '1'},
+                '"1" "1"\n',
+            ],
+            [
+                {'1': {'2': '2'}},
+                '"1"\n{\n\t"2" "2"\n}\n',
+            ],
+            [
+                {'1': {'2': {'3': '3'}}},
+                '"1"\n{\n\t"2"\n\t{\n\t\t"3" "3"\n\t}\n}\n',
+            ],
+        ]
+        for test, expected in tests:
+            self.assertEqual(vdf.dumps(test, pretty=True), expected)
+
     def test_parse_exceptions(self):
         tests = [
 
