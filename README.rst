@@ -11,11 +11,11 @@ Poblems & solutions
 ------------
 
 - There are known files that contain duplicate keys. This can be solved by
-  creating a class inherating from `dict` and implementing a way to handle
+  creating a class inherating from ``dict`` and implementing a way to handle
   duplicate keys.
 
-- By default the module uses `dict`, so key order is preserved. If key order
-  is important then I suggest using `collections.OrderedDict`. See example.
+- By default the module uses ``dict``, so key order is preserved. If key order
+  is important then I suggest using ``collections.OrderedDict``. See example.
 
 
 Install
@@ -49,7 +49,7 @@ Example usage
     vdf.dump(d, open('file2.txt','w'), pretty=True)
 
 
-Using `OrderedDict` to preserve key order.
+Using ``OrderedDict`` to preserve key order.
 
 .. code:: python
 
