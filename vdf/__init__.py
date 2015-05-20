@@ -8,14 +8,13 @@ from __future__ import print_function
 #
 # use at your own risk
 
-__version__ = "1.4"
+__version__ = "1.5"
 
 import re
 import sys
 
 # Py2 & Py3 compability
 if sys.version_info[0] >= 3:
-    from io import IOBase as file_type
     string_type = str
     next_method_name = '__next__'
     BOMS = '\ufffe\ufeff'
@@ -23,8 +22,6 @@ if sys.version_info[0] >= 3:
     def strip_bom(line):
         return line.lstrip(BOMS)
 else:
-    from StringIO import StringIO
-    file_type = (file, StringIO)
     string_type = basestring
     next_method_name = 'next'
     BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
@@ -46,12 +43,12 @@ else:
 def parse(source, mapper=dict):
     if not issubclass(mapper, dict):
         raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
-    if isinstance(source, file_type):
+    if hasattr(source, 'readlines'):
         lines = source.readlines()
     elif isinstance(source, string_type):
         lines = source.split('\n')
     else:
-        raise TypeError("Expected source to be file or str")
+        raise TypeError("Expected source to be str or have readlines() method")
 
     # strip annoying BOMS
     lines[0] = strip_bom(lines[0])
@@ -132,7 +129,7 @@ def loads(fp, **kwargs):
 
 
 def load(fp, **kwargs):
-    assert isinstance(fp, file_type), "Expected a file"
+    assert hasattr(fp, 'readlines'), "Expected fp to have readlines() method"
     return parse(fp, **kwargs)
 
 ###############################################
@@ -171,7 +168,7 @@ def dumps(data, pretty=False, level=0):
 def dump(data, fp, pretty=False):
     if not isinstance(data, dict):
         raise TypeError("Expected data to be a dict")
-    if not isinstance(fp, file_type):
-        raise TypeError("Expected fp to be file")
+    if not hasattr(fp, 'write'):
+        raise TypeError("Expected fp to have write() method")
 
     fp.write(dumps(data, pretty))
