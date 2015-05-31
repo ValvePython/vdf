@@ -36,5 +36,5 @@ setup(
     ],
     keywords='valve keyvalue vdf tf2 dota2 csgo',
     packages=['vdf'],
-    zip_safe=False,
+    zip_safe=True,
 )

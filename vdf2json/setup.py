@@ -40,5 +40,5 @@ setup(
             'vdf2json = vdf2json.cli:main'
         ]
     },
-    zip_safe=False,
+    zip_safe=True,
 )
