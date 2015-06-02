@@ -69,10 +69,10 @@ Using ``OrderedDict`` to preserve key order.
     :target: https://pypi.python.org/pypi/vdf
     :alt: MIT License
 
-.. |coverage| image:: https://img.shields.io/coveralls/rossengeorgiev/vdf-python/master.svg?style=flat
-    :target: https://coveralls.io/r/rossengeorgiev/vdf-python?branch=master
+.. |coverage| image:: https://img.shields.io/coveralls/ValvePython/vdf/master.svg?style=flat
+    :target: https://coveralls.io/r/ValvePython/vdf?branch=master
     :alt: Test coverage
 
-.. |master_build| image:: https://img.shields.io/travis/rossengeorgiev/vdf-python/master.svg?style=flat&label=master%20build
-    :target: http://travis-ci.org/rossengeorgiev/vdf-python
+.. |master_build| image:: https://img.shields.io/travis/ValvePython/vdf/master.svg?style=flat&label=master%20build
+    :target: http://travis-ci.org/ValvePython/vdf
     :alt: Build status of master branch

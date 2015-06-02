@@ -14,7 +14,7 @@ setup(
     version=vdf.__version__,
     description='Library for working with Valve\'s VDF text format',
     long_description=long_description,
-    url='https://github.com/rossengeorgiev/vdf-python',
+    url='https://github.com/ValvePython/vdf',
     author='Rossen Georgiev',
     author_email='hello@rgp.io',
     license='MIT',
