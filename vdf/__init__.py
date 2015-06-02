@@ -8,7 +8,7 @@ from __future__ import print_function
 #
 # use at your own risk
 
-__version__ = "1.5"
+__version__ = "1.6"
 
 import re
 import sys
@@ -154,13 +154,13 @@ def dumps(data, pretty=False, level=0):
     if pretty:
         line_indent = indent * level
 
-    for key in data:
-        if isinstance(data[key], dict):
+    for key, value in data.items():
+        if isinstance(value, dict):
             buf += '%s"%s"\n%s{\n%s%s}\n' % (
-                line_indent, key, line_indent, dumps(data[key], pretty, level+1), line_indent
+                line_indent, key, line_indent, dumps(value, pretty, level+1), line_indent
             )
         else:
-            buf += '%s"%s" "%s"\n' % (line_indent, key, data[key])
+            buf += '%s"%s" "%s"\n' % (line_indent, key, value)
 
     return buf
 
