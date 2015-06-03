@@ -12,10 +12,10 @@ Poblems & solutions
 
 - There are known files that contain duplicate keys. This can be solved by
   creating a class inherating from ``dict`` and implementing a way to handle
-  duplicate keys.
+  duplicate keys. See example implementation of DuplicateOrderedDict_.
 
 - By default the module uses ``dict``, so key order is preserved. If key order
-  is important then I suggest using ``collections.OrderedDict``. See example.
+  is important then I suggest using ``collections.OrderedDict``. See example below.
 
 
 Install
@@ -76,3 +76,5 @@ Using ``OrderedDict`` to preserve key order.
 .. |master_build| image:: https://img.shields.io/travis/ValvePython/vdf/master.svg?style=flat&label=master%20build
     :target: http://travis-ci.org/ValvePython/vdf
     :alt: Build status of master branch
+
+.. _DuplicateOrderedDict: https://github.com/rossengeorgiev/dota2_notebooks/blob/master/DuplicateOrderedDict_for_VDF.ipynb
