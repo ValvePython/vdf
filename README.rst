@@ -7,15 +7,16 @@ https://developer.valvesoftware.com/wiki/KeyValues
 The module works just like ``json`` to convert VDF to a dict, and vise-versa.
 
 
-Poblems & solutions
--------------------
+Problems & solutions
+--------------------
 
 - There are known files that contain duplicate keys. This can be solved by
-  creating a class inherating from ``dict`` and implementing a way to handle
+  creating a class inheriting from ``dict`` and implementing a way to handle
   duplicate keys. See example implementation of DuplicateOrderedDict_.
 
-- By default the module uses ``dict``, so key order is preserved. If key order
-  is important then I suggest using ``collections.OrderedDict``. See example below.
+- By default parsing will return a ``dict``, which doesn't preserve nor guarantee
+  key order due to `hash randomization`_. If key order is important then
+  I suggest using ``collections.OrderedDict`` as mapper. See example below.
 
 
 Install
@@ -78,3 +79,5 @@ Using ``OrderedDict`` to preserve key order.
     :alt: Build status of master branch
 
 .. _DuplicateOrderedDict: https://github.com/rossengeorgiev/dota2_notebooks/blob/master/DuplicateOrderedDict_for_VDF.ipynb
+
+.. _hash randomization: https://docs.python.org/2/using/cmdline.html#envvar-PYTHONHASHSEED
