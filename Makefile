@@ -32,6 +32,7 @@ clean:
 
 dist: clean
 	python setup.py sdist
+	python setup.py bdist_wheel --universal
 
 register:
 	python setup.py register -r pypi
