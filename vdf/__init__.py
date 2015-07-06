@@ -141,28 +141,13 @@ def load(fp, **kwargs):
 ###############################################
 
 
-def dumps(data, pretty=False, level=0):
+def dumps(data, pretty=False):
     if not isinstance(data, dict):
         raise TypeError("Expected data to be a dict or subclass of dict")
     if not isinstance(pretty, bool):
         raise TypeError("Expected pretty to be bool")
 
-    indent = "\t"
-    buf = ""
-    line_indent = ""
-
-    if pretty:
-        line_indent = indent * level
-
-    for key, value in data.items():
-        if isinstance(value, dict):
-            buf += '%s"%s"\n%s{\n%s%s}\n' % (
-                line_indent, key, line_indent, dumps(value, pretty, level+1), line_indent
-            )
-        else:
-            buf += '%s"%s" "%s"\n' % (line_indent, key, value)
-
-    return buf
+    return ''.join(_dump_gen(data, pretty))
 
 
 def dump(data, fp, pretty=False):
@@ -171,4 +156,22 @@ def dump(data, fp, pretty=False):
     if not hasattr(fp, 'write'):
         raise TypeError("Expected fp to have write() method")
 
-    fp.write(dumps(data, pretty))
+    for chunk in _dump_gen(data, pretty):
+        fp.write(chunk)
+
+
+def _dump_gen(data, pretty=False, level=0):
+    indent = "\t"
+    line_indent = ""
+
+    if pretty:
+        line_indent = indent * level
+
+    for key, value in data.items():
+        if isinstance(value, dict):
+            yield '%s"%s"\n%s{\n' % (line_indent, key, line_indent)
+            for chunk in _dump_gen(value, pretty, level+1):
+                yield chunk
+            yield "%s}\n" % line_indent
+        else:
+            yield '%s"%s" "%s"\n' % (line_indent, key, value)
