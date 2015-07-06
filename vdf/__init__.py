@@ -6,23 +6,26 @@ __author__ = "Rossen Georgiev"
 
 import re
 import sys
+from io import StringIO as unicodeIO
 
 # Py2 & Py3 compability
 if sys.version_info[0] >= 3:
     string_type = str
-    next_method_name = '__next__'
     BOMS = '\ufffe\ufeff'
 
-    def strip_bom(line):
-        return line.lstrip(BOMS)
+    def bomlen(line):
+        return len(line) - len(line.lstrip(BOMS))
 else:
+    try:
+        from cStringIO import StringIO as strIO
+    except ImportError:
+        from StringIO import StringIO as strIO
     string_type = basestring
-    next_method_name = 'next'
     BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
     BOMS_UNICODE = '\\ufffe\\ufeff'.decode('unicode-escape')
 
-    def strip_bom(line):
-        return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
+    def bomlen(line):
+        return len(line) - len(line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE))
 
 
 def parse(source, mapper=dict):
@@ -36,15 +39,18 @@ def parse(source, mapper=dict):
     """
     if not issubclass(mapper, dict):
         raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
-    if hasattr(source, 'readlines'):
-        lines = source.readlines()
+    if hasattr(source, 'read'):
+        fp = source
     elif isinstance(source, string_type):
-        lines = source.split('\n')
+        try:
+            fp = unicodeIO(source)
+        except TypeError:
+            fp = strIO(source)
     else:
-        raise TypeError("Expected source to be str or have readlines() method")
+        raise TypeError("Expected source to be str or file-like object")
 
-    # strip annoying BOMS
-    lines[0] = strip_bom(lines[0])
+    # skip past BOMs
+    fp.seek(bomlen(fp.read(10)))
 
     # init
     obj = mapper()
@@ -54,10 +60,8 @@ def parse(source, mapper=dict):
     re_keyvalue = re.compile(r'^"((?:\\.|[^\\"])*)"[ \t]*"((?:\\.|[^\\"])*)(")?')
     re_key = re.compile(r'^"((?:\\.|[^\\"])*)"')
 
-    itr = iter(lines)
-
-    for line in itr:
-        line = line.strip()
+    for line in fp:
+        line = line.rstrip()
 
         # skip empty and comment lines
         if line == "" or line[0] == '/':
@@ -89,7 +93,7 @@ def parse(source, mapper=dict):
                     # if the value is line consume one more line and try to match again,
                     # until we get the KeyValue pair
                     if m.group(3) is None:
-                        line += "\n" + getattr(itr, next_method_name)()
+                        line += "\n" + next(fp).rstrip()
                         continue
 
                     stack[-1][m.group(1)] = m.group(2)
@@ -130,8 +134,9 @@ def load(fp, **kwargs):
     Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
     to a Python object.
     """
-    assert hasattr(fp, 'readlines'), "Expected fp to have readlines() method"
+    assert hasattr(fp, 'read'), "Expected fp to have readlines() method"
     return parse(fp, **kwargs)
+
 
 def dumps(data, pretty=False):
     """
