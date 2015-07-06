@@ -1,14 +1,8 @@
-#!/usr/bin/env python
-from __future__ import print_function
-
-# a simple parser for Valve's KeyValue format
-# https://developer.valvesoftware.com/wiki/KeyValues
-#
-# author: Rossen Popov, 2014
-#
-# use at your own risk
-
+"""
+Module for deserializing/serializing to and from VDF
+"""
 __version__ = "1.6"
+__author__ = "Rossen Georgiev"
 
 import re
 import sys
@@ -30,17 +24,16 @@ else:
     def strip_bom(line):
         return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
 
-###############################################
-#
-# Takes a file or str and returns dict
-#
-# Function assumes valid VDF as input.
-# Invalid VDF will result in unexpected output
-#
-###############################################
-
 
 def parse(source, mapper=dict):
+    """
+    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
+    to a Python object.
+
+    ``mapper`` specifies the Python object used after deserializetion. ``dict` is
+    used by default. Alternatively, ``collections.OrderedDict`` can be used if you
+    wish to preserve key order. Or any object that acts like a ``dict``.
+    """
     if not issubclass(mapper, dict):
         raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
     if hasattr(source, 'readlines'):
@@ -124,24 +117,26 @@ def parse(source, mapper=dict):
 
 
 def loads(fp, **kwargs):
+    """
+    Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
+    a VDF) to a Python object.
+    """
     assert isinstance(fp, string_type), "Expected a str"
     return parse(fp, **kwargs)
 
 
 def load(fp, **kwargs):
+    """
+    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
+    to a Python object.
+    """
     assert hasattr(fp, 'readlines'), "Expected fp to have readlines() method"
     return parse(fp, **kwargs)
 
-###############################################
-#
-# Take a dict, reuturns VDF in str buffer
-#
-# dump(dict(), pretty=True) for indented VDF
-#
-###############################################
-
-
 def dumps(data, pretty=False):
+    """
+    Serialize ``obj`` to VDF formatted ``str``.
+    """
     if not isinstance(data, dict):
         raise TypeError("Expected data to be a dict or subclass of dict")
     if not isinstance(pretty, bool):
@@ -151,6 +146,10 @@ def dumps(data, pretty=False):
 
 
 def dump(data, fp, pretty=False):
+    """
+    Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
+    ``.write()``-supporting file-like object).
+    """
     if not isinstance(data, dict):
         raise TypeError("Expected data to be a dict")
     if not hasattr(fp, 'write'):
