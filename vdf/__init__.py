@@ -57,8 +57,10 @@ def parse(source, mapper=dict):
     stack = [obj]
     expect_bracket = False
 
-    re_keyvalue = re.compile(r'^"((?:\\.|[^\\"])*)"[ \t]*"((?:\\.|[^\\"])*)(")?')
-    re_key = re.compile(r'^"((?:\\.|[^\\"])*)"')
+    re_keyvalue = re.compile(r'^"(?P<key>(?:\\.|[^\\"])*)"'
+                             r'([ \t]*'
+                             r'"(?P<value>(?:\\.|[^\\"])*)(?P<vq_end>")?)?'
+                             )
 
     for line in fp:
         line = line.rstrip()
@@ -86,30 +88,27 @@ def parse(source, mapper=dict):
         # parse keyvalue pairs
         if line[0] == '"':
             while True:
-                m = re_keyvalue.match(line)
+                match = re_keyvalue.match(line)
 
-                # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
-                if m:
-                    # if the value is line consume one more line and try to match again,
-                    # until we get the KeyValue pair
-                    if m.group(3) is None:
-                        line += "\n" + next(fp).rstrip()
-                        continue
-
-                    stack[-1][m.group(1)] = m.group(2)
+                if not match:
+                    raise SyntaxError("vdf.parse: invalid syntax")
 
                 # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
-                else:
-                    m = re_key.match(line)
-
-                    if not m:
-                        raise SyntaxError("vdf.parse: invalid syntax")
-
-                    key = m.group(1)
-
+                if match.group('value') is None:
+                    key = match.group('key')
                     stack[-1][key] = mapper()
                     stack.append(stack[-1][key])
                     expect_bracket = True
+
+                # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
+                else:
+                    # if the value is line consume one more line and try to match again,
+                    # until we get the KeyValue pair
+                    if match.group('vq_end') is None:
+                        line += "\n" + next(fp).rstrip()
+                        continue
+
+                    stack[-1][match.group('key')] = match.group('value')
 
                 # exit the loop
                 break
