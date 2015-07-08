@@ -1,7 +1,7 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "1.7"
+__version__ = "1.8"
 __author__ = "Rossen Georgiev"
 
 import re
@@ -63,7 +63,7 @@ def parse(source, mapper=dict):
                              )
 
     for line in fp:
-        line = line.rstrip()
+        line = line.strip()
 
         # skip empty and comment lines
         if line == "" or line[0] == '/':
