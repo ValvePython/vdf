@@ -11,6 +11,7 @@ from io import StringIO as unicodeIO
 # Py2 & Py3 compability
 if sys.version_info[0] >= 3:
     string_type = str
+    iter_items = 'items'
     BOMS = '\ufffe\ufeff'
 
     def bomlen(line):
@@ -21,6 +22,7 @@ else:
     except ImportError:
         from StringIO import StringIO as strIO
     string_type = basestring
+    iter_items = 'iteritems'
     BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
     BOMS_UNICODE = '\\ufffe\\ufeff'.decode('unicode-escape')
 
@@ -55,6 +57,7 @@ def parse(source, mapper=dict):
     # init
     obj = mapper()
     stack = [obj]
+    parent_key = None
     expect_bracket = False
 
     re_keyvalue = re.compile(r'^"(?P<key>(?:\\.|[^\\"])*)"'
@@ -93,11 +96,21 @@ def parse(source, mapper=dict):
                 if not match:
                     raise SyntaxError("vdf.parse: invalid syntax")
 
+                key = match.group('key')
+                value = match.group('value')
+                parent = stack[-1]
+
+                # if first subkey is '0' assume this an array
+                # and turn tha parrent into a list
+                if len(parent) == 0 and key == "0":
+                    parent = stack[-1] = list()
+                    if parent_key is not None:
+                        stack[-2][parent_key] = parent
+
                 # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
-                if match.group('value') is None:
-                    key = match.group('key')
-                    stack[-1][key] = mapper()
-                    stack.append(stack[-1][key])
+                if value is None:
+                    value = mapper()
+                    stack.append(value)
                     expect_bracket = True
 
                 # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
@@ -108,7 +121,12 @@ def parse(source, mapper=dict):
                         line += "\n" + next(fp).rstrip()
                         continue
 
-                    stack[-1][match.group('key')] = match.group('value')
+                if isinstance(parent, list):
+                    parent.append(value)
+                    parent_key = len(parent) - 1
+                else:
+                    parent[key] = value
+                    parent_key = key
 
                 # exit the loop
                 break
@@ -116,7 +134,7 @@ def parse(source, mapper=dict):
     if len(stack) != 1:
         raise SyntaxError("vdf.parse: unclosed parenthasis or quotes")
 
-    return obj
+    return stack.pop()
 
 
 def loads(fp, **kwargs):
@@ -141,8 +159,8 @@ def dumps(data, pretty=False):
     """
     Serialize ``obj`` to VDF formatted ``str``.
     """
-    if not isinstance(data, dict):
-        raise TypeError("Expected data to be a dict or subclass of dict")
+    if not isinstance(data, (dict, list)):
+        raise TypeError("Expected data to be an instance of``dict`` or ``list``")
     if not isinstance(pretty, bool):
         raise TypeError("Expected pretty to be bool")
 
@@ -154,8 +172,8 @@ def dump(data, fp, pretty=False):
     Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
     """
-    if not isinstance(data, dict):
-        raise TypeError("Expected data to be a dict")
+    if not isinstance(data, (dict, list)):
+        raise TypeError("Expected data to be an instance of``dict`` or ``list``")
     if not hasattr(fp, 'write'):
         raise TypeError("Expected fp to have write() method")
 
@@ -170,8 +188,13 @@ def _dump_gen(data, pretty=False, level=0):
     if pretty:
         line_indent = indent * level
 
-    for key, value in data.items():
-        if isinstance(value, dict):
+    if isinstance(data, list):
+        itr = enumerate(data)
+    else:
+        itr = getattr(data, iter_items)()
+
+    for key, value in itr:
+        if isinstance(value, (dict, list)):
             yield '%s"%s"\n%s{\n' % (line_indent, key, line_indent)
             for chunk in _dump_gen(value, pretty, level+1):
                 yield chunk
