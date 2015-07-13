@@ -57,13 +57,15 @@ def parse(source, mapper=dict):
     stack = [obj]
     expect_bracket = False
 
-    re_keyvalue = re.compile(r'^"(?P<key>(?:\\.|[^\\"])*)"'
-                             r'([ \t]*'
-                             r'"(?P<value>(?:\\.|[^\\"])*)(?P<vq_end>")?)?'
+    re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])+)"|(?P<key>[a-z0-9\-\_]+))'
+                             r'([ \t]*('
+                             r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
+                             r'|(?P<val>[a-z0-9\-\_]+)'
+                             r'))?'
                              )
 
     for line in fp:
-        line = line.strip()
+        line = line.rstrip()
 
         # skip empty and comment lines
         if line == "" or line[0] == '/':
@@ -86,32 +88,33 @@ def parse(source, mapper=dict):
             raise SyntaxError("vdf.parse: one too many closing parenthasis")
 
         # parse keyvalue pairs
-        if line[0] == '"':
-            while True:
-                match = re_keyvalue.match(line)
+        while True:
+            match = re_keyvalue.match(line)
 
-                if not match:
-                    raise SyntaxError("vdf.parse: invalid syntax")
+            if not match:
+                raise SyntaxError("vdf.parse: invalid syntax")
 
-                # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
-                if match.group('value') is None:
-                    key = match.group('key')
-                    stack[-1][key] = mapper()
-                    stack.append(stack[-1][key])
-                    expect_bracket = True
+            key = match.group('key') if match.group('qkey') is None else match.group('qkey')
+            val = match.group('val') if match.group('qval') is None else match.group('qval')
 
-                # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
-                else:
-                    # if the value is line consume one more line and try to match again,
-                    # until we get the KeyValue pair
-                    if match.group('vq_end') is None:
-                        line += "\n" + next(fp).rstrip()
-                        continue
+            # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
+            if val is None:
+                stack[-1][key] = mapper()
+                stack.append(stack[-1][key])
+                expect_bracket = True
 
-                    stack[-1][match.group('key')] = match.group('value')
+            # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
+            else:
+                # if the value is line consume one more line and try to match again,
+                # until we get the KeyValue pair
+                if match.group('vq_end') is None and match.group('qval') is not None:
+                    line += "\n" + next(fp).rstrip('\r\n')
+                    continue
 
-                # exit the loop
-                break
+                stack[-1][key] = val
+
+            # exit the loop
+            break
 
     if len(stack) != 1:
         raise SyntaxError("vdf.parse: unclosed parenthasis or quotes")
