@@ -4,7 +4,7 @@ VDF is Valve's KeyValue text file format
 
 https://developer.valvesoftware.com/wiki/KeyValues
 
-The module works just like ``json`` to convert VDF to a dict, and vise-versa.
+The module works just like ``json`` for (de)serilization to and from VDF.
 
 
 Problems & solutions
@@ -14,7 +14,7 @@ Problems & solutions
   creating a class inheriting from ``dict`` and implementing a way to handle
   duplicate keys. See example implementation of DuplicateOrderedDict_.
 
-- By default parsing will return a ``dict``, which doesn't preserve nor guarantee
+- By default deserialization will return a ``dict``, which doesn't preserve nor guarantee
   key order due to `hash randomization`_. If key order is important then
   I suggest using ``collections.OrderedDict`` as mapper. See example below.
 
