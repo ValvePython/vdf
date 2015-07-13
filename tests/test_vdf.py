@@ -111,78 +111,160 @@ class testcase_routine_parse(unittest.TestCase):
 
 
 class testcase_VDF(unittest.TestCase):
-    def test_format(self):
-        tests = [
-            # empty test
-            ['', {}],
+    def test_empty(self):
+        self.assertEqual(vdf.loads(""), {})
 
-            # simple key and values
-            [
-                {'1': '1'},
-                '"1" "1"\n'
-            ],
-            [
-                {"a": "1", "b": "2"},
-                '"a" "1"\n"b" "2"\n'
-            ],
+    def test_keyvalue_pairs(self):
+        INPUT = '''
+        "key1" "value1"
+        key2 "value2"
+        "key3" value3
+        '''
 
-            # nesting
-            [
-                {"a": {"b": {"c": {"d": "1", "e": "2"}}}},
-                '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n'
-            ],
-            [
-                '"a"\n{\n"b"\n{\n"c"\n{\n"e" "2"\n"d" "1"\n}\n}\n}\n"b" "2"\n',
-                {"a": {"b": {"c": {"d": "1", "e": "2"}}}, "b": "2"}
-            ],
+        EXPECTED = {
+            'key1': 'value1',
+            'key2': 'value2',
+            'key3': 'value3',
+        }
 
-            # ignoring comment lines
-            [
-                "//comment text\n//comment",
-                {}
-            ],
-            [
-                "//comment text\n//comment",
-                {}
-            ],
-            [
-                '"a" "b" //comment text',
-                {"a": "b"}],
-            [
-                '//comment\n"a" "1"\n"b" "2" //comment',
-                {"a": "1", "b": "2"}
-            ],
-            [
-                '"a"\n{//comment\n}//comment',
-                {"a": {}}
-            ],
-            [
-                '"a" //comment\n{\n}',
-                {"a": {}}
-            ],
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
+    def test_keyvalue_open_quoted(self):
+        INPUT = (
+            '"key1" "a\n'
+            'b\n'
+            'c"\n'
+            'key2 "a\n'
+            'b\n'
+            'c"\n'
+            )
+
+        EXPECTED = {
+            'key1': 'a\nb\nc',
+            'key2': 'a\nb\nc',
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
+    def test_multi_keyvalue_pairs(self):
+        INPUT = '''
+        "root1"
+        {
+            "key1" "value1"
+            key2 "value2"
+            "key3" value3
+        }
+        root2
+        {
+            "key1" "value1"
+            key2 "value2"
+            "key3" value3
+        }
+        '''
+
+        EXPECTED = {
+            'root1': {
+                'key1': 'value1',
+                'key2': 'value2',
+                'key3': 'value3',
+            },
+            'root2': {
+                'key1': 'value1',
+                'key2': 'value2',
+                'key3': 'value3',
+            }
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
+    def test_deep_nesting(self):
+        INPUT = '''
+        "root"
+        {
+            node1
+            {
+                "node2"
+                {
+                    node3
+                    {
+                        "node4"
+                        {
+                            node5
+                            {
+                                "node6"
+                                {
+                                    node7
+                                    {
+                                        "node8"
+                                        {
+                                            "key" "value"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        '''
+
+        EXPECTED = {
+            'root': {
+            'node1': {
+            'node2': {
+            'node3': {
+            'node4': {
+            'node5': {
+            'node6': {
+            'node7': {
+            'node8': {
+            'key': 'value'
+            }}}}}}}}}
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
+    def test_comments_and_blank_lines(self):
+        INPUT = '''
+        // this is comment
+        "key1" "value1" // another comment
+        key2 "value2"   // further comments
+        "key3" value3   // useless comment
+
+        key4 // comments comments comments
+        {    // is this a comment?
+
+        k v // comment
+
+        }   // you only comment once
+
+        // comment out of nowhere
+
+        "key5" // pretty much anything here
+        {      // is this a comment?
+
+        k v    //comment
+
+        }
+        '''
+
+        EXPECTED = {
+            'key1': 'value1',
+            'key2': 'value2',
+            'key3': 'value3',
+            'key4': {
+                'k': 'v'
+            },
+            'key5': {
+                'k': 'v'
+            },
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
 
 
-            # new lines in value
-            [
-                r'"a" "xx\"xxx"',
-                {"a": r'xx\"xxx'}
-            ],
-            [
-                '"a" "xx\\"\nxxx"',
-                {"a": 'xx\\"\nxxx'}
-            ],
-            [
-                '"a" "\n\n\n\n"',
-                {"a": '\n\n\n\n'}
-            ],
-        ]
-
-        for test, expected in tests:
-            if isinstance(test, dict):
-                self.assertEqual(vdf.dumps(test), expected)
-            else:
-                self.assertEqual(vdf.loads(test), expected)
-
+class testcase_VDF_other(unittest.TestCase):
     def test_dumps_pretty_output(self):
         tests = [
             [
@@ -206,15 +288,19 @@ class testcase_VDF(unittest.TestCase):
 
             # expect bracket - invalid syntax
             '"asd"\n"zxc" "333"\n"',
+            'asd\nzxc 333\n"',
 
             # invalid syntax
             '"asd" "123"\n"zxc" "333"\n"',
+            'asd 123\nzxc 333\n"',
 
             # one too many closing parenthasis
             '"asd"\n{\n"zxc" "123"\n}\n}\n}\n}\n',
+            'asd\n{\nzxc 123\n}\n}\n}\n}\n',
 
             # unclosed parenthasis
             '"asd"\n{\n"zxc" "333"\n'
+            'asd\n{\nzxc 333\n'
         ]
 
         for test in tests:

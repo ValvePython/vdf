@@ -16,10 +16,7 @@ if sys.version_info[0] >= 3:
     def bomlen(line):
         return len(line) - len(line.lstrip(BOMS))
 else:
-    try:
-        from cStringIO import StringIO as strIO
-    except ImportError:
-        from StringIO import StringIO as strIO
+    from cStringIO import StringIO as strIO
     string_type = basestring
     BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
     BOMS_UNICODE = '\\ufffe\\ufeff'.decode('unicode-escape')
@@ -64,10 +61,10 @@ def parse(source, mapper=dict):
                              )
 
     for line in fp:
-        line = line.rstrip()
+        line = line.lstrip()
 
         # skip empty and comment lines
-        if line == "" or line[0] == '/':
+        if line == "" or line[0:2] == '//':
             continue
 
         # one level deeper
@@ -107,7 +104,7 @@ def parse(source, mapper=dict):
                 # if the value is line consume one more line and try to match again,
                 # until we get the KeyValue pair
                 if match.group('vq_end') is None and match.group('qval') is not None:
-                    line += "\n" + next(fp).rstrip('\r\n')
+                    line += next(fp)
                     continue
 
                 stack[-1][key] = val
