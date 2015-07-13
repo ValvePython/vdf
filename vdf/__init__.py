@@ -53,8 +53,7 @@ def parse(source, mapper=dict):
     fp.seek(bomlen(fp.read(10)))
 
     # init
-    obj = mapper()
-    stack = [obj]
+    stack = [mapper()]
     expect_bracket = False
 
     re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])+)"|(?P<key>[a-z0-9\-\_]+))'
@@ -119,7 +118,7 @@ def parse(source, mapper=dict):
     if len(stack) != 1:
         raise SyntaxError("vdf.parse: unclosed parenthasis or quotes")
 
-    return obj
+    return stack.pop()
 
 
 def loads(fp, **kwargs):
@@ -145,7 +144,7 @@ def dumps(data, pretty=False):
     Serialize ``obj`` to VDF formatted ``str``.
     """
     if not isinstance(data, dict):
-        raise TypeError("Expected data to be a dict or subclass of dict")
+        raise TypeError("Expected data to be an instance of``dict``")
     if not isinstance(pretty, bool):
         raise TypeError("Expected pretty to be bool")
 
@@ -158,7 +157,7 @@ def dump(data, fp, pretty=False):
     ``.write()``-supporting file-like object).
     """
     if not isinstance(data, dict):
-        raise TypeError("Expected data to be a dict")
+        raise TypeError("Expected data to be an instance of``dict``")
     if not hasattr(fp, 'write'):
         raise TypeError("Expected fp to have write() method")
 
