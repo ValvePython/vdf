@@ -118,13 +118,17 @@ class testcase_VDF(unittest.TestCase):
         INPUT = '''
         "key1" "value1"
         key2 "value2"
-        "key3" value3
+        KEY3 "value3"
+        "key4" value4
+        "key5" VALUE5
         '''
 
         EXPECTED = {
             'key1': 'value1',
             'key2': 'value2',
-            'key3': 'value3',
+            'KEY3': 'value3',
+            'key4': 'value4',
+            'key5': 'VALUE5',
         }
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
@@ -185,7 +189,7 @@ class testcase_VDF(unittest.TestCase):
             {
                 "node2"
                 {
-                    node3
+                    NODE3
                     {
                         "node4"
                         {
@@ -193,7 +197,7 @@ class testcase_VDF(unittest.TestCase):
                             {
                                 "node6"
                                 {
-                                    node7
+                                    NODE7
                                     {
                                         "node8"
                                         {
@@ -213,11 +217,11 @@ class testcase_VDF(unittest.TestCase):
             'root': {
             'node1': {
             'node2': {
-            'node3': {
+            'NODE3': {
             'node4': {
             'node5': {
             'node6': {
-            'node7': {
+            'NODE7': {
             'node8': {
             'key': 'value'
             }}}}}}}}}
@@ -244,7 +248,7 @@ class testcase_VDF(unittest.TestCase):
         "key5" // pretty much anything here
         {      // is this a comment?
 
-        k v    //comment
+        K V    //comment
 
         }
         '''
@@ -257,7 +261,7 @@ class testcase_VDF(unittest.TestCase):
                 'k': 'v'
             },
             'key5': {
-                'k': 'v'
+                'K': 'V'
             },
         }
 

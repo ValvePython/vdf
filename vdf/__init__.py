@@ -57,7 +57,8 @@ def parse(source, mapper=dict):
                              r'([ \t]*('
                              r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
                              r'|(?P<val>[a-z0-9\-\_]+)'
-                             r'))?'
+                             r'))?',
+                             flags=re.I
                              )
 
     for line in fp:
