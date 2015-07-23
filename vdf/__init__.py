@@ -1,7 +1,7 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "1.9"
+__version__ = "1.10"
 __author__ = "Rossen Georgiev"
 
 import re
@@ -65,7 +65,7 @@ def parse(source, mapper=dict):
         line = line.lstrip()
 
         # skip empty and comment lines
-        if line == "" or line[0:2] == '//':
+        if line == "" or line[0] == '/':
             continue
 
         # one level deeper
@@ -74,7 +74,7 @@ def parse(source, mapper=dict):
             continue
 
         if expect_bracket:
-            raise SyntaxError("vdf.parse: invalid syntax")
+            raise SyntaxError("vdf.parse: expected openning bracket")
 
         # one level back
         if line[0] == "}":
