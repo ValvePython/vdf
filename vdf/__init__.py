@@ -60,9 +60,11 @@ def parse(source, mapper=dict):
                              r'))?',
                              flags=re.I
                              )
+    line_count = 0
 
     for line in fp:
         line = line.lstrip()
+        line_count += 1
 
         # skip empty and comment lines
         if line == "" or line[0] == '/':
@@ -74,7 +76,7 @@ def parse(source, mapper=dict):
             continue
 
         if expect_bracket:
-            raise SyntaxError("vdf.parse: expected openning bracket")
+            raise SyntaxError("vdf.parse: expected openning bracket (line %d)" % line_count)
 
         # one level back
         if line[0] == "}":
@@ -82,14 +84,14 @@ def parse(source, mapper=dict):
                 stack.pop()
                 continue
 
-            raise SyntaxError("vdf.parse: one too many closing parenthasis")
+            raise SyntaxError("vdf.parse: one too many closing parenthasis (line %d)" % line_count)
 
         # parse keyvalue pairs
         while True:
             match = re_keyvalue.match(line)
 
             if not match:
-                raise SyntaxError("vdf.parse: invalid syntax")
+                raise SyntaxError("vdf.parse: invalid syntax (line %d)" % line_count)
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
             val = match.group('val') if match.group('qval') is None else match.group('qval')
@@ -114,7 +116,7 @@ def parse(source, mapper=dict):
             break
 
     if len(stack) != 1:
-        raise SyntaxError("vdf.parse: unclosed parenthasis or quotes")
+        raise SyntaxError("vdf.parse: unclosed parenthasis or quotes (EOF)")
 
     return stack.pop()
 
