@@ -1,4 +1,4 @@
-|pypi| |license| |coverage| |master_build|
+|pypi| |license| |coverage| |scru| |master_build|
 
 VDF is Valve's KeyValue text file format
 
@@ -73,6 +73,10 @@ Using ``OrderedDict`` to preserve key order.
 .. |coverage| image:: https://img.shields.io/coveralls/ValvePython/vdf/master.svg?style=flat
     :target: https://coveralls.io/r/ValvePython/vdf?branch=master
     :alt: Test coverage
+
+.. |scru| image:: https://scrutinizer-ci.com/g/ValvePython/vdf/badges/quality-score.png?b=master
+    :target: https://scrutinizer-ci.com/g/ValvePython/vdf/?branch=master
+    :alt: Scrutinizer score
 
 .. |master_build| image:: https://img.shields.io/travis/ValvePython/vdf/master.svg?style=flat&label=master%20build
     :target: http://travis-ci.org/ValvePython/vdf
