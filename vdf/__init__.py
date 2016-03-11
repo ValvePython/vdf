@@ -126,8 +126,8 @@ def loads(s, **kwargs):
     Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
     to a Python object.
     """
-    assert isinstance(fp, string_type), "Expected a str"
-    return parse(fp, **kwargs)
+    assert isinstance(s, string_type), "Expected a str"
+    return parse(s, **kwargs)
 
 
 def load(fp, **kwargs):
