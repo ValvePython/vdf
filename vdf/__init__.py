@@ -121,10 +121,10 @@ def parse(source, mapper=dict):
     return stack.pop()
 
 
-def loads(fp, **kwargs):
+def loads(s, **kwargs):
     """
-    Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
-    a VDF) to a Python object.
+    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
+    to a Python object.
     """
     assert isinstance(fp, string_type), "Expected a str"
     return parse(fp, **kwargs)
@@ -132,8 +132,8 @@ def loads(fp, **kwargs):
 
 def load(fp, **kwargs):
     """
-    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
-    to a Python object.
+    Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
+    a VDF) to a Python object.
     """
     assert hasattr(fp, 'read'), "Expected fp to have readlines() method"
     return parse(fp, **kwargs)
