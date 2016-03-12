@@ -13,19 +13,19 @@ if sys.version_info[0] >= 3:
     string_type = str
     BOMS = '\ufffe\ufeff'
 
-    def bomlen(line):
-        return len(line) - len(line.lstrip(BOMS))
+    def strip_bom(line):
+        return line.lstrip(BOMS)
 else:
-    from cStringIO import StringIO as strIO
+    from StringIO import StringIO as strIO
     string_type = basestring
     BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
     BOMS_UNICODE = '\\ufffe\\ufeff'.decode('unicode-escape')
 
-    def bomlen(line):
-        return len(line) - len(line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE))
+    def strip_bom(line):
+        return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
 
 
-def parse(source, mapper=dict):
+def parse(fp, mapper=dict):
     """
     Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
     to a Python object.
@@ -36,20 +36,9 @@ def parse(source, mapper=dict):
     """
     if not issubclass(mapper, dict):
         raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
-    if hasattr(source, 'read'):
-        fp = source
-    elif isinstance(source, string_type):
-        try:
-            fp = unicodeIO(source)
-        except TypeError:
-            fp = strIO(source)
-    else:
-        raise TypeError("Expected source to be str or file-like object")
+    if not hasattr(fp, 'readline'):
+        raise TypeError("Expected fp to be a file-like object supporting line iteration")
 
-    # skip past BOMs
-    fp.seek(bomlen(fp.read(10)))
-
-    # init
     stack = [mapper()]
     expect_bracket = False
 
@@ -58,13 +47,13 @@ def parse(source, mapper=dict):
                              r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
                              r'|(?P<val>[a-z0-9\-\_]+)'
                              r'))?',
-                             flags=re.I
-                             )
-    line_count = 0
+                             flags=re.I)
 
-    for line in fp:
+    for idx, line in enumerate(fp):
+        if idx == 0:
+            line = strip_bom(line)
+
         line = line.lstrip()
-        line_count += 1
 
         # skip empty and comment lines
         if line == "" or line[0] == '/':
@@ -76,7 +65,7 @@ def parse(source, mapper=dict):
             continue
 
         if expect_bracket:
-            raise SyntaxError("vdf.parse: expected openning bracket (line %d)" % line_count)
+            raise SyntaxError("vdf.parse: expected openning bracket (line %d)" % (idx + 1))
 
         # one level back
         if line[0] == "}":
@@ -84,14 +73,14 @@ def parse(source, mapper=dict):
                 stack.pop()
                 continue
 
-            raise SyntaxError("vdf.parse: one too many closing parenthasis (line %d)" % line_count)
+            raise SyntaxError("vdf.parse: one too many closing parenthasis (line %d)" % (idx + 1))
 
         # parse keyvalue pairs
         while True:
             match = re_keyvalue.match(line)
 
             if not match:
-                raise SyntaxError("vdf.parse: invalid syntax (line %d)" % line_count)
+                raise SyntaxError("vdf.parse: invalid syntax (line %d)" % (idx + 1))
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
             val = match.group('val') if match.group('qval') is None else match.group('qval')
@@ -121,47 +110,53 @@ def parse(source, mapper=dict):
     return stack.pop()
 
 
-def loads(fp, **kwargs):
+def loads(s, **kwargs):
     """
-    Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
-    a VDF) to a Python object.
+    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a JSON
+    document) to a Python object.
     """
-    assert isinstance(fp, string_type), "Expected a str"
+    if not isinstance(s, string_type):
+        raise TypeError("Expected s to be a str, got %s", type(s))
+
+    try:
+        fp = unicodeIO(s)
+    except TypeError:
+        fp = strIO(s)
+
     return parse(fp, **kwargs)
 
 
 def load(fp, **kwargs):
     """
-    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
-    to a Python object.
+    Deserialize ``fp`` (a ``.readline()``-supporting file-like object containing
+    a JSON document) to a Python object.
     """
-    assert hasattr(fp, 'read'), "Expected fp to have readlines() method"
     return parse(fp, **kwargs)
 
 
-def dumps(data, pretty=False):
-    """
-    Serialize ``obj`` to VDF formatted ``str``.
-    """
-    if not isinstance(data, dict):
-        raise TypeError("Expected data to be an instance of``dict``")
-    if not isinstance(pretty, bool):
-        raise TypeError("Expected pretty to be bool")
-
-    return ''.join(_dump_gen(data, pretty))
-
-
-def dump(data, fp, pretty=False):
+def dumps(obj, pretty=False):
     """
     Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
     """
-    if not isinstance(data, dict):
+    if not isinstance(obj, dict):
+        raise TypeError("Expected data to be an instance of``dict``")
+    if not isinstance(pretty, bool):
+        raise TypeError("Expected pretty to be bool")
+
+    return ''.join(_dump_gen(obj, pretty))
+
+
+def dump(obj, fp, pretty=False):
+    """
+    Serialize ``obj`` to a JSON formatted ``str``.
+    """
+    if not isinstance(obj, dict):
         raise TypeError("Expected data to be an instance of``dict``")
     if not hasattr(fp, 'write'):
         raise TypeError("Expected fp to have write() method")
 
-    for chunk in _dump_gen(data, pretty):
+    for chunk in _dump_gen(obj, pretty):
         fp.write(chunk)
 
 

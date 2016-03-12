@@ -20,11 +20,14 @@ class testcase_helpers_load(unittest.TestCase):
     @mock.patch("vdf.parse")
     def test_routine_loads(self, mock_parse):
         vdf.loads("")
-        mock_parse.assert_called_with("")
+
+        (fp,), _ = mock_parse.call_args
+
+        self.assertIsInstance(fp, StringIO)
 
     def test_routine_loads_assert(self):
         for t in [5, 5.5, 1.0j, None, [], (), {}, lambda: 0, sys.stdin, self.f]:
-            self.assertRaises(AssertionError, vdf.loads, t)
+            self.assertRaises(TypeError, vdf.loads, t)
 
     @mock.patch("vdf.parse")
     def test_routine_load(self, mock_parse):
@@ -38,8 +41,11 @@ class testcase_helpers_load(unittest.TestCase):
     def test_routines_mapper_passing(self, mock_parse):
         vdf.load(sys.stdin, mapper=dict)
         mock_parse.assert_called_with(sys.stdin, mapper=dict)
+
         vdf.loads("", mapper=dict)
-        mock_parse.assert_called_with("", mapper=dict)
+        (fp,), kw = mock_parse.call_args
+        self.assertIsInstance(fp, StringIO)
+        self.assertIs(kw['mapper'], dict)
 
         class CustomDict(dict):
             pass
@@ -47,11 +53,13 @@ class testcase_helpers_load(unittest.TestCase):
         vdf.load(sys.stdin, mapper=CustomDict)
         mock_parse.assert_called_with(sys.stdin, mapper=CustomDict)
         vdf.loads("", mapper=CustomDict)
-        mock_parse.assert_called_with("", mapper=CustomDict)
+        (fp,), kw = mock_parse.call_args
+        self.assertIsInstance(fp, StringIO)
+        self.assertIs(kw['mapper'], CustomDict)
 
     def test_routine_load_assert(self):
         for t in [5, 5.5, 1.0j, None, [], (), {}, lambda: 0, '']:
-            self.assertRaises(AssertionError, vdf.load, t)
+            self.assertRaises(TypeError, vdf.load, t)
 
 
 class testcase_helpers_dump(unittest.TestCase):
@@ -95,11 +103,11 @@ class testcase_routine_parse(unittest.TestCase):
             self.assertEqual(result, {'asd': '123'})
 
     def test_parse_source_asserts(self):
-        for t in [5, 5.5, 1.0j, True, None, (), {}, lambda: 0]:
+        for t in ['', 5, 5.5, 1.0j, True, None, (), {}, lambda: 0]:
             self.assertRaises(TypeError, vdf.parse, t)
 
     def test_parse_mapper_assert(self):
-        self.assertRaises(TypeError, vdf.parse, "", mapper=list)
+        self.assertRaises(TypeError, vdf.parse, StringIO(" "), mapper=list)
 
     def test_parse_file_source(self):
         self.assertEqual(vdf.parse(StringIO(" ")), {})
@@ -308,4 +316,4 @@ class testcase_VDF_other(unittest.TestCase):
         ]
 
         for test in tests:
-            self.assertRaises(SyntaxError, vdf.parse, test)
+            self.assertRaises(SyntaxError, vdf.loads, test)
