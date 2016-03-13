@@ -112,6 +112,87 @@ def parse(fp, mapper=dict):
 
     return stack.pop()
 
+
+def loads(s, **kwargs):
+    """
+    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a JSON
+    document) to a Python object.
+    """
+    if not isinstance(s, string_type):
+        raise TypeError("Expected s to be a str, got %s", type(s))
+
+    try:
+        fp = unicodeIO(s)
+    except TypeError:
+        fp = strIO(s)
+
+    return parse(fp, **kwargs)
+
+
+def load(fp, **kwargs):
+    """
+    Deserialize ``fp`` (a ``.readline()``-supporting file-like object containing
+    a JSON document) to a Python object.
+    """
+    return parse(fp, **kwargs)
+
+
+def dumps(obj, pretty=False):
+    """
+    Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
+    ``.write()``-supporting file-like object).
+    """
+    if not isinstance(obj, dict):
+        raise TypeError("Expected data to be an instance of``dict``")
+    if not isinstance(pretty, bool):
+        raise TypeError("Expected pretty to be bool")
+
+    return ''.join(_dump_gen(obj, pretty))
+
+
+def dump(obj, fp, pretty=False):
+    """
+    Serialize ``obj`` to a JSON formatted ``str``.
+    """
+    if not isinstance(obj, dict):
+        raise TypeError("Expected data to be an instance of``dict``")
+    if not hasattr(fp, 'write'):
+        raise TypeError("Expected fp to have write() method")
+
+    for chunk in _dump_gen(obj, pretty):
+        fp.write(chunk)
+
+
+def _dump_gen(data, pretty=False, level=0):
+    indent = "\t"
+    line_indent = ""
+
+    if pretty:
+        line_indent = indent * level
+
+    for key, value in data.items():
+        if isinstance(value, dict):
+            yield '%s"%s"\n%s{\n' % (line_indent, key, line_indent)
+            for chunk in _dump_gen(value, pretty, level+1):
+                yield chunk
+            yield "%s}\n" % line_indent
+        else:
+            yield '%s"%s" "%s"\n' % (line_indent, key, value)
+
+
+class BASE_INT(int_type):
+    def __repr__(self):
+        return "%s(%d)" % (self.__class__.__name__, self)
+
+class UINT_64(BASE_INT):
+    pass
+
+class POINTER(BASE_INT):
+    pass
+
+class COLOR(BASE_INT):
+    pass
+
 BIN_NONE        = b'\x00'
 BIN_STRING      = b'\x01'
 BIN_INT32       = b'\x02'
@@ -197,87 +278,6 @@ def binary_loads(s, mapper=dict):
         raise SyntaxError("Binary VDF ended at index %d, but length is %d" % (idx, len(s)))
 
     return stack.pop()
-
-
-def loads(s, **kwargs):
-    """
-    Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a JSON
-    document) to a Python object.
-    """
-    if not isinstance(s, string_type):
-        raise TypeError("Expected s to be a str, got %s", type(s))
-
-    try:
-        fp = unicodeIO(s)
-    except TypeError:
-        fp = strIO(s)
-
-    return parse(fp, **kwargs)
-
-
-def load(fp, **kwargs):
-    """
-    Deserialize ``fp`` (a ``.readline()``-supporting file-like object containing
-    a JSON document) to a Python object.
-    """
-    return parse(fp, **kwargs)
-
-
-def dumps(obj, pretty=False):
-    """
-    Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
-    ``.write()``-supporting file-like object).
-    """
-    if not isinstance(obj, dict):
-        raise TypeError("Expected data to be an instance of``dict``")
-    if not isinstance(pretty, bool):
-        raise TypeError("Expected pretty to be bool")
-
-    return ''.join(_dump_gen(obj, pretty))
-
-
-def dump(obj, fp, pretty=False):
-    """
-    Serialize ``obj`` to a JSON formatted ``str``.
-    """
-    if not isinstance(obj, dict):
-        raise TypeError("Expected data to be an instance of``dict``")
-    if not hasattr(fp, 'write'):
-        raise TypeError("Expected fp to have write() method")
-
-    for chunk in _dump_gen(obj, pretty):
-        fp.write(chunk)
-
-
-def _dump_gen(data, pretty=False, level=0):
-    indent = "\t"
-    line_indent = ""
-
-    if pretty:
-        line_indent = indent * level
-
-    for key, value in data.items():
-        if isinstance(value, dict):
-            yield '%s"%s"\n%s{\n' % (line_indent, key, line_indent)
-            for chunk in _dump_gen(value, pretty, level+1):
-                yield chunk
-            yield "%s}\n" % line_indent
-        else:
-            yield '%s"%s" "%s"\n' % (line_indent, key, value)
-
-
-class BASE_INT(int_type):
-    def __repr__(self):
-        return "%s(%d)" % (self.__class__.__name__, self)
-
-class UINT_64(BASE_INT):
-    pass
-
-class POINTER(BASE_INT):
-    pass
-
-class COLOR(BASE_INT):
-    pass
 
 def binary_dumps(obj):
     """
