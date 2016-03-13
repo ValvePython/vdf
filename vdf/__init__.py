@@ -2,16 +2,17 @@
 Module for deserializing/serializing to and from VDF
 """
 __version__ = "1.10"
-import struct
 __author__ = "Rossen Georgiev"
 
 import re
 import sys
+import struct
 from io import StringIO as unicodeIO
 
 # Py2 & Py3 compability
 if sys.version_info[0] >= 3:
     string_type = str
+    int_type = int
     BOMS = '\ufffe\ufeff'
 
     def strip_bom(line):
@@ -19,6 +20,7 @@ if sys.version_info[0] >= 3:
 else:
     from StringIO import StringIO as strIO
     string_type = basestring
+    int_type = long
     BOMS = '\xef\xbb\xbf\xff\xfe\xfe\xff'
     BOMS_UNICODE = '\\ufffe\\ufeff'.decode('unicode-escape')
 
@@ -110,83 +112,90 @@ def parse(fp, mapper=dict):
 
     return stack.pop()
 
+BIN_NONE        = b'\x00'
+BIN_STRING      = b'\x01'
+BIN_INT32       = b'\x02'
+BIN_FLOAT32     = b'\x03'
+BIN_POINTER     = b'\x04'
+BIN_WIDESTRING  = b'\x05'
+BIN_COLOR       = b'\x06'
+BIN_UINT64      = b'\x07'
+BIN_END         = b'\x08'
 
-def _read_till_seperator(fp, seperator="\x00", buffersize=2048):
-    tmp = ""
-    start_offset = fp.tell() 
-    _sep_length = len(seperator)
-    while True:
-        data = fp.read(buffersize)
-        if not data:
-            return tmp
-        tmp += data
-        index = tmp.find(seperator)
-        if index != -1:
-            fp.seek(start_offset + index + _sep_length)
-            return tmp[:index]
-
-
-BIN_NONE = '\x00'
-BIN_STRING = '\x01'
-BIN_INT32 = '\x02'
-BIN_FLOAT32 = '\x03'
-BIN_POINTER = '\x04'
-BIN_WIDESTRING = '\x05'
-BIN_COLOR = '\x06'
-BIN_UINT64 = '\x07'
-BIN_END = '\x08'
-def parse_binary(source, mapper=dict):
+def binary_loads(s, mapper=dict):
     """
-    Deserialize ``source`` (a ``str`` or file like object containing a VDF in "binary form")
+    Deserialize ``s`` (a ``str`` containing a VDF in "binary form")
     to a Python object.
 
     ``mapper`` specifies the Python object used after deserializetion. ``dict` is
     used by default. Alternatively, ``collections.OrderedDict`` can be used if you
     wish to preserve key order. Or any object that acts like a ``dict``.
     """
+    if not isinstance(s, bytes):
+        raise TypeError("Expected s to be bytes, got %s", type(s))
     if not issubclass(mapper, dict):
         raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
-    if hasattr(source, 'read'):
-        fp = source
-    elif isinstance(source, string_type):
-        fp = strIO(source)
-    else:
-        raise TypeError("Expected source to be str or file-like object")
 
-    # init
-    stack = [mapper()]    
-    _read_int32 = struct.Struct('<i').unpack
-    _read_uint64 = struct.Struct('<Q').unpack
-    _read_float32 = struct.Struct('<f').unpack
+    # helpers
+    int32 = struct.Struct('<i')
+    uint64 = struct.Struct('<Q')
+    float32 = struct.Struct('<f')
 
-    while True:
-        obj_type = fp.read(1)
-        if obj_type == BIN_END:
+    def read_string(s, idx, wide=False):
+        end = s.find(b'\x00\x00' if wide else b'\x00', idx)
+        if end == -1:
+            raise SyntaxError("Unterminated cstring, index: %d" % idx)
+        result = s[idx:end]
+        if wide:
+            result = result.decode('utf-16')
+        elif bytes is not str:
+            result = result.decode('ascii')
+        return result, end + (2 if wide else 1)
+
+    stack = [mapper()]
+    idx = 0
+
+    while len(s) > idx:
+        t = s[idx:idx+1]
+        idx += 1
+
+        if t == BIN_END:
             if len(stack) > 1:
                 stack.pop()
-            else:
-                return stack[0]
-            continue
-        
-        obj_name = _read_till_seperator(fp, seperator="\x00")
-        if obj_type == BIN_NONE:
-            stack[-1][obj_name] = mapper()
-            stack.append(stack[-1][obj_name])
-        elif obj_type == BIN_STRING:
-            value = _read_till_seperator(fp, seperator="\x00")
-            stack[-1][obj_name] = value
-        elif obj_type == BIN_INT32:
-            stack[-1][obj_name] = _read_int32(fp.read(4))[0]
-        elif obj_type == BIN_UINT64:
-            stack[-1][obj_name] = _read_uint64(fp.read(8))[0]
-        elif obj_type == BIN_FLOAT32:
-            stack[-1][obj_name] = _read_float32(fp.read(4))[0]
-        elif obj_type in (BIN_POINTER, BIN_WIDESTRING, BIN_COLOR):
-            # TODO: Check what they are and implement
-            raise SyntaxError('vdf.parse_binary: type not supported #%i' % ord(obj_type))
+                continue
+            break
+
+        key, idx = read_string(s, idx)
+
+        if t == BIN_NONE:
+            stack[-1][key] = mapper()
+            stack.append(stack[-1][key])
+        elif t == BIN_STRING:
+            stack[-1][key], idx = read_string(s, idx)
+        elif t == BIN_WIDESTRING:
+            stack[-1][key], idx = read_string(s, idx, wide=True)
+        elif t in (BIN_INT32, BIN_POINTER, BIN_COLOR):
+            val = int32.unpack_from(s, idx)[0]
+
+            if t == BIN_POINTER:
+                val = POINTER(val)
+            elif t == BIN_COLOR:
+                val = COLOR(val)
+
+            stack[-1][key] = val
+            idx += int32.size
+        elif t == BIN_UINT64:
+            stack[-1][key] = UINT_64(uint64.unpack_from(s, idx)[0])
+            idx += uint64.size
+        elif t == BIN_FLOAT32:
+            stack[-1][key] = float32.unpack_from(s, idx)[0]
+            idx += float32.size
         else:
-            raise SyntaxError('vdf.parse_binary: invalid type code #%i' % ord(obj_type))
-       
+            raise SyntaxError("Unknown data type at index %d: %s" % (idx-1, repr(t)))
+
+    if len(s) != idx or len(stack) != 1:
+        raise SyntaxError("Binary VDF ended at index %d, but length is %d" % (idx, len(s)))
+
     return stack.pop()
 
 
@@ -255,32 +264,69 @@ def _dump_gen(data, pretty=False, level=0):
             yield "%s}\n" % line_indent
         else:
             yield '%s"%s" "%s"\n' % (line_indent, key, value)
-            
-            
-def _dump_gen_binary(data, level=0):
+
+
+class BASE_INT(int_type):
+    def __repr__(self):
+        return "%s(%d)" % (self.__class__.__name__, self)
+
+class UINT_64(BASE_INT):
+    pass
+
+class POINTER(BASE_INT):
+    pass
+
+class COLOR(BASE_INT):
+    pass
+
+def binary_dumps(obj):
     """
-    Serializes an dict (or an extension thereof) as binary vdf.
-    Every scalar need to be a tuple or list with the length 2 in the form:
-        (``data_type``, ``value``)
-        where ``data_type`` is one of (BIN_INT32, BIN_UINT64, BIN_FLOAT32, BIN_STRING)
+    Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
+    ``.write()``-supporting file-like object).
+
     """
-    type_mapper = {
-                   BIN_INT32: struct.Struct('<i').pack,
-                   BIN_UINT64: struct.Struct('<Q').pack,
-                   BIN_FLOAT32: struct.Struct('<f').pack,
-                   BIN_STRING: lambda x: x + "\x00",
-                   }
-    for key, value in data.items():
-        if isinstance(value, dict):
-            yield "".join((BIN_NONE, key, "\x00"))
-            for chunk in _dump_gen_binary(value, level+1):
-                yield chunk
-            yield BIN_END
+    return b''.join(_binary_dump_gen(obj))
+
+def _binary_dump_gen(obj, level=0):
+    if level == 0 and len(obj) == 0:
+        return
+
+    int32 = struct.Struct('<i')
+    uint64 = struct.Struct('<Q')
+    float32 = struct.Struct('<f')
+
+    for key, value in obj.items():
+        if isinstance(key, string_type):
+            key = key.encode('ascii')
         else:
-            if not isinstance(value, (list, tuple)) or len(value) != 2:
-                raise TypeError("Values need to be a list or tuple with the length 2.")
-            type_code, type_data = value
-            if type_code in type_mapper:
-                yield "".join((type_code, key, "\x00", type_mapper[type_code](type_data)))
+            raise TypeError("dict keys must be of type str, got %s" % type(key))
+
+        if isinstance(value, dict):
+            yield BIN_NONE + key + BIN_NONE
+            for chunk in _binary_dump_gen(value, level+1):
+                yield chunk
+        elif isinstance(value, UINT_64):
+            yield BIN_UINT64 + key + BIN_NONE + struct.pack('<Q', value)
+        elif isinstance(value, string_type):
+            try:
+                value = value.encode('ascii') + BIN_NONE
+                yield BIN_STRING
+            except:
+                value = value.encode('utf-16') + BIN_NONE*2
+                yield BIN_WIDESTRING
+            yield key + BIN_NONE + value
+        elif isinstance(value, float):
+            yield BIN_FLOAT32 + key + BIN_NONE + struct.pack('<f', value)
+        elif isinstance(value, (COLOR, POINTER, int, int_type)):
+            if isinstance(value, COLOR):
+                yield BIN_COLOR
+            elif isinstance(value, POINTER):
+                yield BIN_POINTER
             else:
-                raise TypeError('Unsupported type')
+                yield BIN_INT32
+            yield key + BIN_NONE
+            yield struct.pack('<i', value)
+        else:
+            raise TypeError("Unsupported type: %s" % type(value))
+
+    yield BIN_END
