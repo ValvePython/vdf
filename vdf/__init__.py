@@ -90,8 +90,9 @@ def parse(fp, mapper=dict):
 
             # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
             if val is None:
-                stack[-1][key] = mapper()
-                stack.append(stack[-1][key])
+                _m = mapper()
+                stack[-1][key] = _m
+                stack.append(_m)
                 expect_bracket = True
 
             # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
@@ -249,8 +250,9 @@ def binary_loads(s, mapper=dict):
         key, idx = read_string(s, idx)
 
         if t == BIN_NONE:
-            stack[-1][key] = mapper()
-            stack.append(stack[-1][key])
+            _m = mapper()
+            stack[-1][key] = _m
+            stack.append(_m)
         elif t == BIN_STRING:
             stack[-1][key], idx = read_string(s, idx)
         elif t == BIN_WIDESTRING:
