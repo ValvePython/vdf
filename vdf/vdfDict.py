@@ -118,8 +118,6 @@ class VDFDict(dict):
           
     def get_all_by_key(self, key):
         """ Returns all values of the given key as a generator """
-        print "whuuts" * 50
-        print 1
         if not isinstance(key, string_type):
             raise TypeError("Key need to be a string.")
         return (self[d] for d in self.__omap if d[1] == key)
