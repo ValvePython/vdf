@@ -5,7 +5,7 @@ __version__ = "1.10"
 import collections
 __author__ = "Rossen Georgiev"
 
-from vdfDict import VDFDict
+from vdf.vdfDict import VDFDict
 
 import re
 import sys

@@ -1,5 +1,5 @@
 import sys 
-from collections import namedtuple, Iterable
+from collections import Iterable
 
 if sys.version_info[0] >= 3:
     string_type = str
@@ -115,6 +115,14 @@ class VDFDict(dict):
                 self[kv[0]] = kv[1]
         if len(kwargs) > 0:
             self.update(kwargs)
+          
+    def get_all_by_key(self, key):
+        """ Returns all values of the given key as a generator """
+        print "whuuts" * 50
+        print 1
+        if not isinstance(key, string_type):
+            raise TypeError("Key need to be a string.")
+        return (self[d] for d in self.__omap if d[1] == key)
             
     def remove_all_by_key(self, key):
         """ Removes all items with the given key """

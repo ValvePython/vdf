@@ -72,6 +72,12 @@ class DuplicateOrderedDict_test(unittest.TestCase):
         a.clear()
         self.assertEqual(len(a), 0)
         
+    def test_get_all(self):
+        a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
+        self.assertSequenceEqual(
+            tuple(a.get_all_by_key("1")),
+            (2,2**31,2)) 
+        
         
     def test_exception_insert(self):
         """ Only strings (and tuples) are supported as keys """
@@ -82,6 +88,11 @@ class DuplicateOrderedDict_test(unittest.TestCase):
         """ Only strings are supported as keys """
         a = VDFDict()
         self.assertRaises(TypeError, a.remove_all_by_key, 5)
+        
+    def test_exception_get_all(self):
+        """ Only strings are supported as keys """
+        a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
+        self.assertRaises(TypeError, a.get_all_by_key, 5)
         
         
         
