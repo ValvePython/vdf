@@ -2,7 +2,10 @@
 Module for deserializing/serializing to and from VDF
 """
 __version__ = "1.10"
+import collections
 __author__ = "Rossen Georgiev"
+
+from vdf.vdfDict import VDFDict
 
 import re
 import sys
@@ -26,6 +29,7 @@ else:
 
     def strip_bom(line):
         return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
+            
 
 
 def parse(fp, mapper=dict):
