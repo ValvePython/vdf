@@ -59,13 +59,13 @@ class DuplicateOrderedDict_test(unittest.TestCase):
         a = VDFDict((("1",2),("1",2),("5",3),("1",2)))
         b = VDFDict((("1",2),("1",2),("1",2)))
         del a["5"]
-        self.assertSequenceEqual(a.items(), b.items())
+        self.assertSequenceEqual(tuple(a.items()), tuple(b.items()))
         
     def test_remove_all(self):
         a = VDFDict((("1",2),("1",2),("5",3),("1",2)))
         b = VDFDict((("5",3),))
         a.remove_all_by_key("1")
-        self.assertSequenceEqual(a.items(), b.items())
+        self.assertSequenceEqual(tuple(a.items()), tuple(b.items()))
         
     def test_clear(self):
         a = VDFDict((("1",2),("1",2),("5",3),("1",2)))
