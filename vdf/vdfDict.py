@@ -1,6 +1,5 @@
 import sys 
 from collections import Iterable
-from __builtin__ import isinstance
 
 if sys.version_info[0] >= 3:
     string_type = str
