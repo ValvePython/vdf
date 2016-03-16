@@ -116,12 +116,20 @@ class DuplicateOrderedDict_test(unittest.TestCase):
     def test_exception_update_2(self):
         a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
         class foo():
-            items = lambda x: None
-        self.assertRaises(TypeError, a.update, foo)
+            def items(self):
+                return None
+        self.assertRaises(TypeError, a.update, foo())
 
     def test_exception_update_3(self):
         a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
         self.assertRaises(TypeError, a.update, range(10))
+        
+    def test_exception_update_4(self):
+        a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
+        class foo():
+            def items(self):
+                return ((1,2,3),(4,))
+        self.assertRaises(TypeError, a.update, foo())
 
     def test_exception_set_item(self):
         a = VDFDict()

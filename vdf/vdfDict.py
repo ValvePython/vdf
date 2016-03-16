@@ -1,5 +1,6 @@
 import sys 
 from collections import Iterable
+from __builtin__ import isinstance
 
 if sys.version_info[0] >= 3:
     string_type = str
@@ -108,10 +109,10 @@ class VDFDict(dict):
             if hasattr(data, 'items'):
                 data = data.items()
             if not isinstance(data, Iterable):
-                raise TypeError('Argument need to provide a items method or be iterable.')
+                raise TypeError('Argument or its items method need to provide an iterable.')
             for kv in data:
-                if len(kv) != 2:
-                    raise TypeError('Argument, or its keys method need to provide tuples of the length 2.')
+                if not hasattr(kv, '__len__') or len(kv) != 2:
+                    raise TypeError('Argument, or its keys method need to provide iterables of the length 2.')
                 self[kv[0]] = kv[1]
         if len(kwargs) > 0:
             self.update(kwargs)
