@@ -24,7 +24,7 @@ class VDFDict(dict):
                 
     def __repr__(self):
         out = "%s(" % self.__class__.__name__
-        out += "%s)" % repr(self.items())
+        out += "%s)" % repr(tuple(self.items()))
         return out
     
     def __len__(self):
