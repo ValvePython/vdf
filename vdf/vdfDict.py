@@ -83,7 +83,7 @@ class VDFDict(dict):
     def get(self, key, default=None):
         if not isinstance(key, tuple):
             key = (0, key)
-        return dict.get(self, key, default=default)
+        return dict.get(self, key, default)
     
     def iter_items(self):
         return ((key[1], self[key]) for key in self.__omap)        

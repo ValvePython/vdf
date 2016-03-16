@@ -78,25 +78,52 @@ class DuplicateOrderedDict_test(unittest.TestCase):
             tuple(a.get_all_by_key("1")),
             (2,2**31,2)) 
         
-        
+    def test_get(self):
+        a = VDFDict({'key': 'foo'})
+        self.assertEqual(a.get("key"), a["key"])
+
+    def test_repr(self):
+        a = VDFDict(self.map_test)
+        self.assertEqual(
+            repr(a),
+            "VDFDict(%s)" % repr(self.map_test)
+            )
+
+
     def test_exception_insert(self):
         """ Only strings (and tuples) are supported as keys """
         a = VDFDict()
         self.assertRaises(TypeError, a.__setitem__, 5, "foo")
-        
+
     def test_exception_remove_all(self):
         """ Only strings are supported as keys """
         a = VDFDict()
         self.assertRaises(TypeError, a.remove_all_by_key, 5)
-        
+
     def test_exception_get_all(self):
         """ Only strings are supported as keys """
         a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
         self.assertRaises(TypeError, a.get_all_by_key, 5)
-        
-        
-        
-        
-        
-        
-        
+
+    def test_exception_del(self):
+        a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
+        self.assertRaises(KeyError, a.__delitem__, "7")
+
+    def test_exception_update_1(self):
+        a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
+        self.assertRaises(TypeError, a.update, 7)
+
+    def test_exception_update_2(self):
+        a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
+        class foo():
+            items = lambda x: None
+        self.assertRaises(TypeError, a.update, foo)
+
+    def test_exception_update_3(self):
+        a = VDFDict((("1",2),("1",2**31),("5",3),("1",2)))
+        self.assertRaises(TypeError, a.update, range(10))
+
+    def test_exception_set_item(self):
+        a = VDFDict()
+        self.assertRaises(KeyError, a.__setitem__, (7, "key"), "value")
+
