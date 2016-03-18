@@ -85,23 +85,23 @@ class VDFDict(dict):
             key = (0, key)
         return dict.get(self, key, default)
     
-    def iter_items(self):
+    def iteritems(self):
         return ((key[1], self[key]) for key in self.__omap)        
     
     def items(self):
-        return _iter_helper(self.iter_items())
+        return _iter_helper(self.iteritems())
     
-    def iter_keys(self):
+    def iterkeys(self):
         return (key[1] for key in self.__omap)
     
     def keys(self):
-        return _iter_helper(self.iter_keys())
+        return _iter_helper(self.iterkeys())
         
-    def iter_values(self): 
+    def itervalues(self): 
         return (self[key] for key in self.__omap)
     
     def values(self):
-        return _iter_helper(self.iter_values())
+        return _iter_helper(self.itervalues())
 
     def update(self, data=None, **kwargs):
         if not data is None:

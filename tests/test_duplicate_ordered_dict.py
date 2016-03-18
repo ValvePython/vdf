@@ -42,6 +42,15 @@ class DuplicateOrderedDict_test(unittest.TestCase):
             b[k] = v
         self.assertDictEqual(a, b)
         
+    def test_duplicate_keys(self):
+        items = (('key1', 1), ('key1', 2), ('key3', 3), ('key1', 1))
+        keys = tuple(x[0] for x in items) 
+        values = tuple(x[1] for x in items)
+        _dict = VDFDict((('key1', 1), ('key1', 2), ('key3', 3), ('key1', 1)))
+        self.assertSequenceEqual(tuple(_dict.items()), items) 
+        self.assertSequenceEqual(tuple(_dict.keys()), keys) 
+        self.assertSequenceEqual(tuple(_dict.values()), values) 
+        
     def test_update(self):
         a = VDFDict((("1",2),("1",2),("5",3),("1",2)))
         b = VDFDict()
