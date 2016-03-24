@@ -28,6 +28,11 @@ class DuplicateOrderedDict_test(unittest.TestCase):
             tuple(_dict.items()),
             self.map_test)
         
+    def test_in(self):
+        a = VDFDict({"1":2, "3":4, "5":6})
+        self.assertTrue('1' in a)
+        self.assertFalse('6' in a)
+        
     def test_direct_access_set(self):
         a = {"1":2, "3":4, "5":6}
         b = VDFDict()

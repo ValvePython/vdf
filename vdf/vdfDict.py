@@ -64,6 +64,11 @@ class VDFDict(dict):
     def __iter__(self):
         return iter(self.keys())
     
+    def __contains__(self, item):
+        if isinstance(item, tuple):
+            return dict.__contains__(self, item)
+        return dict.__contains__(self, (0, item))
+    
     def __eq__(self, other):
         """
         This only returns true if the k,v pairs of `other`
