@@ -83,7 +83,11 @@ def parse(fp, mapper=dict):
             match = re_keyvalue.match(line)
 
             if not match:
-                raise SyntaxError("vdf.parse: invalid syntax (line %d)" % (idx + 1))
+                try:
+                    line += next(fp)
+                except StopIteration:
+                    raise SyntaxError("vdf.parse: unexpected EOF (open key quote?)")
+                continue
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
             val = match.group('val') if match.group('qval') is None else match.group('qval')
@@ -100,7 +104,10 @@ def parse(fp, mapper=dict):
                 # if the value is line consume one more line and try to match again,
                 # until we get the KeyValue pair
                 if match.group('vq_end') is None and match.group('qval') is not None:
-                    line += next(fp)
+                    try:
+                        line += next(fp)
+                    except StopIteration:
+                        raise SyntaxError("vdf.parse: unexpected EOF (open value quote?)")
                     continue
 
                 stack[-1][key] = val
