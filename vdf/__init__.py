@@ -2,15 +2,13 @@
 Module for deserializing/serializing to and from VDF
 """
 __version__ = "1.10"
-import collections
 __author__ = "Rossen Georgiev"
-
-from vdf.vdfDict import VDFDict
 
 import re
 import sys
 import struct
 from io import StringIO as unicodeIO
+from vdf.vdict import VDFDict
 
 # Py2 & Py3 compability
 if sys.version_info[0] >= 3:
@@ -29,7 +27,6 @@ else:
 
     def strip_bom(line):
         return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
-            
 
 
 def parse(fp, mapper=dict):
