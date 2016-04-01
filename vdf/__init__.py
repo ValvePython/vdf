@@ -85,9 +85,9 @@ def parse(fp, mapper=dict):
             if not match:
                 try:
                     line += next(fp)
+                    continue
                 except StopIteration:
                     raise SyntaxError("vdf.parse: unexpected EOF (open key quote?)")
-                continue
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
             val = match.group('val') if match.group('qval') is None else match.group('qval')
@@ -106,9 +106,9 @@ def parse(fp, mapper=dict):
                 if match.group('vq_end') is None and match.group('qval') is not None:
                     try:
                         line += next(fp)
+                        continue
                     except StopIteration:
                         raise SyntaxError("vdf.parse: unexpected EOF (open value quote?)")
-                    continue
 
                 stack[-1][key] = val
 

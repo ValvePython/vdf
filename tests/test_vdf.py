@@ -306,6 +306,7 @@ class testcase_VDF_other(unittest.TestCase):
             '"asd" "123"\n"zxc" "333"\n"',
             'asd 123\nzxc 333\n"',
             '"asd\n\n\n\n\nzxc',
+            '"asd" "bbb\n\n\n\n\nzxc',
 
             # one too many closing parenthasis
             '"asd"\n{\n"zxc" "123"\n}\n}\n}\n}\n',
