@@ -1,142 +1,200 @@
-import sys 
-from collections import Iterable
+import sys
+from collections import Counter
 
 if sys.version_info[0] >= 3:
+    _range = range
     string_type = str
-    _iter_helper = lambda x: x
+    import collections as _c
+    class _kView(_c.KeysView):
+        def __iter__(self):
+            return self._mapping.iterkeys()
+    class _vView(_c.ValuesView):
+        def __iter__(self):
+            return self._mapping.itervalues()
+    class _iView(_c.ItemsView):
+        def __iter__(self):
+            return self._mapping.iteritems()
 else:
+    _range = xrange
     string_type = basestring
-    _iter_helper = tuple
-    
+    _kView = lambda x: list(x.iterkeys())
+    _vView = lambda x: list(x.itervalues())
+    _iView = lambda x: list(x.iteritems())
+
 
 class VDFDict(dict):
-    def __init__(self, values=None):
+    def __init__(self, data=None):
         """
-        A dictionary implmentation which allows duplicate keys and contains the insert order.
-        
-    
-        ``values`` can be used to initialize this `DuplicateOrderedDict` instance..
-          Dict like objects and iterables containing iterables of the length 2 are supported. 
+        This is a dictionary that supports duplicate keys and preserves insert order
+
+        ``data`` can be a ``dict``, or a sequence of key-value tuples. (e.g. ``[('key', 'value'),..]``)
+        The only supported type for key is str.
+
+        Get/set duplicates is done by tuples ``(index, key)``, where index is the duplicate index
+        for the specified key. (e.g. ``(0, 'key')``, ``(1, 'key')``...)
+
+        When the ``key`` is ``str``, instead of tuple, set will create a duplicate and get will look up ``(0, key)``
         """
         self.__omap = []
-        if not values is None:
-            self.update(values)
-                
+        self.__kcount = Counter()
+
+        if data is not None:
+            if not isinstance(data, (list, dict)):
+                raise ValueError("Expected data to be list of pairs or dict, got %s" % type(data))
+            self.update(data)
+
     def __repr__(self):
         out = "%s(" % self.__class__.__name__
-        out += "%s)" % repr(tuple(self.items()))
+        out += "%s)" % repr(list(self.iteritems()))
         return out
-    
+
     def __len__(self):
         return len(self.__omap)
-    
-    def __setitem__(self, key, value):
-        if not isinstance(key, tuple):
-            idx = 0
-            while True:
-                if (idx, key) not in self:
-                    self.__omap.append((idx, key))
-                    break
-                else:
-                    idx += 1
-            key = (idx, key)
-        else:
-            if key not in self:
-                raise KeyError("%s doesn\'t exist" % repr(key))
+
+    def _verify_key_tuple(self, key):
+        if len(key) != 2:
+            raise ValueError("Expected key tuple length to be 2, got %d" % len(key))
+        if not isinstance(key[0], int):
+            raise TypeError("Key index should be an int")
         if not isinstance(key[1], string_type):
-            raise TypeError("The key need to be a string")      
+            raise TypeError("Key value should be a str")
+
+    def _normalize_key(self, key):
+        if isinstance(key, string_type):
+            key = (0, key)
+        elif isinstance(key, tuple):
+            self._verify_key_tuple(key)
+        else:
+            raise TypeError("Expected key to be a str or tuple, got %s" % type(key))
+        return key
+
+    def __setitem__(self, key, value):
+        if isinstance(key, string_type):
+            key = (self.__kcount[key], key)
+            self.__omap.append(key)
+        elif isinstance(key, tuple):
+            self._verify_key_tuple(key)
+            if key not in self:
+                raise KeyError("%s doesn't exist" % repr(key))
+        else:
+            raise TypeError("Expected either a str or tuple for key")
         super(VDFDict, self).__setitem__(key, value)
-        
+        self.__kcount[key[1]] += 1
+
     def __getitem__(self, key):
-        if not isinstance(key, tuple):
-            key = (0, key)
-        return super(VDFDict, self).__getitem__(key)
-    
+        return super(VDFDict, self).__getitem__(self._normalize_key(key))
+
     def __delitem__(self, key):
-        if not isinstance(key, tuple):
-            key = (0, key)
-        try:
-            self.__omap.remove(key)
-        except ValueError:
-            raise KeyError(key)
-        return dict.__delitem__(self, key)
-    
+        key = self._normalize_key(key)
+        result = super(VDFDict, self).__delitem__(key)
+
+        start_idx = self.__omap.index(key)
+        del self.__omap[start_idx]
+
+        dup_idx, skey = key
+        self.__kcount[skey] -= 1
+        tail_count = self.__kcount[skey] - dup_idx
+
+        if tail_count > 0:
+            for idx in _range(start_idx, len(self.__omap)):
+                if self.__omap[idx][1] == skey:
+                    oldkey = self.__omap[idx]
+                    newkey = (dup_idx, skey)
+                    super(VDFDict, self).__setitem__(newkey, self[oldkey])
+                    super(VDFDict, self).__delitem__(oldkey)
+                    self.__omap[idx] = newkey
+
+                    dup_idx += 1
+                    tail_count -= 1
+                    if tail_count == 0:
+                        break
+
+        if self.__kcount[skey] == 0:
+            del self.__kcount[skey]
+
+        return result
+
     def __iter__(self):
-        return iter(self.keys())
-    
-    def __contains__(self, item):
-        if isinstance(item, tuple):
-            return dict.__contains__(self, item)
-        return dict.__contains__(self, (0, item))
-    
+        return iter(self.iterkeys())
+
+    def __contains__(self, key):
+        return super(VDFDict, self).__contains__(self._normalize_key(key))
+
     def __eq__(self, other):
-        """
-        This only returns true if the k,v pairs of `other`
-        are returned in the same order.
-        """
-        if isinstance(other, dict):
-            other = tuple(other.items())
-        return other == tuple(self.items())
-    
+        if isinstance(other, VDFDict):
+            return list(self.items()) == list(other.items())
+        else:
+            return False
+
     def __ne__(self, other):
-        return not self.__eq__(other) 
-    
+        return not self.__eq__(other)
+
     def clear(self):
-        dict.clear(self)
+        super(VDFDict, self).clear()
+        self.__kcount.clear()
         self.__omap = list()
-    
-    def get(self, key, default=None):
-        if not isinstance(key, tuple):
-            key = (0, key)
-        return dict.get(self, key, default)
-    
-    def iteritems(self):
-        return ((key[1], self[key]) for key in self.__omap)        
-    
-    def items(self):
-        return _iter_helper(self.iteritems())
-    
-    def iterkeys(self):
-        return (key[1] for key in self.__omap)
-    
-    def keys(self):
-        return _iter_helper(self.iterkeys())
-        
-    def itervalues(self): 
-        return (self[key] for key in self.__omap)
-    
-    def values(self):
-        return _iter_helper(self.itervalues())
+
+    def get(self, key, *args):
+        return super(VDFDict, self).get(self._normalize_key(key), *args)
+
+    def setdefault(self, key, default=None):
+        if key not in self:
+            self.__setitem__(key, default)
+        return self.__getitem__(key)
+
+    def pop(self, key):
+        key = self._normalize_key(key)
+        value = self.__getitem__(key)
+        self.__delitem__(key)
+        return value
+
+    def popitem(self):
+        if not self.__omap:
+            raise KeyError("VDFDict is empty")
+        key = self.__omap[-1]
+        return key[1], self.pop(key)
 
     def update(self, data=None, **kwargs):
-        if not data is None:
-            if hasattr(data, 'items'):
-                data = data.items()
-            if not isinstance(data, Iterable):
-                raise TypeError('Argument or its items method need to provide an iterable.')
-            for kv in data:
-                if not hasattr(kv, '__len__') or len(kv) != 2:
-                    raise TypeError('Argument, or its keys method need to provide iterables of the length 2.')
-                self[kv[0]] = kv[1]
-        if len(kwargs) > 0:
-            self.update(kwargs)
-          
-    def get_all_by_key(self, key):
-        """ Returns all values of the given key as a generator """
+        if isinstance(data, dict):
+            data = data.items()
+        elif not isinstance(data, list):
+            raise TypeError("Expected data to be a list or dict, got %s" % type(data))
+
+        for key, value in data:
+            self.__setitem__(key, value)
+
+    def iterkeys(self):
+        return (key[1] for key in self.__omap)
+
+    def keys(self):
+        return _kView(self)
+
+    def itervalues(self):
+        return (self[key] for key in self.__omap)
+
+    def values(self):
+        return _vView(self)
+
+    def iteritems(self):
+        return ((key[1], self[key]) for key in self.__omap)
+
+    def items(self):
+        return _iView(self)
+
+    def get_all_for(self, key):
+        """ Returns all values of the given key """
         if not isinstance(key, string_type):
-            raise TypeError("Key need to be a string.")
-        return (self[d] for d in self.__omap if d[1] == key)
-            
-    def remove_all_by_key(self, key):
+            raise TypeError("Key needs to be a string.")
+        return [self[(idx, key)] for idx in _range(self.__kcount[key])]
+
+    def remove_all_for(self, key):
         """ Removes all items with the given key """
         if not isinstance(key, string_type):
             raise TypeError("Key need to be a string.")
-        to_del = list()
-        for d in self.__omap:
-            if d[1] == key:
-                to_del.append(d)
-        for d in to_del:
-            del self[d]
-            
-        
-        
+
+        for idx in _range(self.__kcount[key]):
+            super(VDFDict, self).__delitem__((idx, key))
+
+        self.__omap = list(filter(lambda x: x[1] != key, self.__omap))
+
+        del self.__kcount[key]
