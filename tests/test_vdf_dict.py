@@ -275,3 +275,20 @@ class VDFDictCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             a.remove_all_for((0, '5'))
 
+    def test_has_duplicates(self):
+        # single level duplicate
+        a = [('1', 11), ('1', 22)]
+        b = VDFDict(a)
+        self.assertTrue(b.has_duplicates())
+
+        # duplicate in nested
+        c = VDFDict({'1': b})
+        self.assertTrue(c.has_duplicates())
+
+        # duplicate in nested dict
+        d = VDFDict({'1': {'2': {'3': b}}})
+        self.assertTrue(d.has_duplicates())
+
+        # duplicate in nested dict
+        d = VDFDict({'1': {'2': {'3': None}}})
+        self.assertFalse(d.has_duplicates())

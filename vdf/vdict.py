@@ -2,8 +2,9 @@ import sys
 from collections import Counter
 
 if sys.version_info[0] >= 3:
+    _iter_values = 'values'
     _range = range
-    string_type = str
+    _string_type = str
     import collections as _c
     class _kView(_c.KeysView):
         def __iter__(self):
@@ -15,8 +16,9 @@ if sys.version_info[0] >= 3:
         def __iter__(self):
             return self._mapping.iteritems()
 else:
+    _iter_values = 'itervalues'
     _range = xrange
-    string_type = basestring
+    _string_type = basestring
     _kView = lambda x: list(x.iterkeys())
     _vView = lambda x: list(x.itervalues())
     _iView = lambda x: list(x.iteritems())
@@ -56,11 +58,11 @@ class VDFDict(dict):
             raise ValueError("Expected key tuple length to be 2, got %d" % len(key))
         if not isinstance(key[0], int):
             raise TypeError("Key index should be an int")
-        if not isinstance(key[1], string_type):
+        if not isinstance(key[1], _string_type):
             raise TypeError("Key value should be a str")
 
     def _normalize_key(self, key):
-        if isinstance(key, string_type):
+        if isinstance(key, _string_type):
             key = (0, key)
         elif isinstance(key, tuple):
             self._verify_key_tuple(key)
@@ -69,7 +71,7 @@ class VDFDict(dict):
         return key
 
     def __setitem__(self, key, value):
-        if isinstance(key, string_type):
+        if isinstance(key, _string_type):
             key = (self.__kcount[key], key)
             self.__omap.append(key)
         elif isinstance(key, tuple):
@@ -183,13 +185,13 @@ class VDFDict(dict):
 
     def get_all_for(self, key):
         """ Returns all values of the given key """
-        if not isinstance(key, string_type):
+        if not isinstance(key, _string_type):
             raise TypeError("Key needs to be a string.")
         return [self[(idx, key)] for idx in _range(self.__kcount[key])]
 
     def remove_all_for(self, key):
         """ Removes all items with the given key """
-        if not isinstance(key, string_type):
+        if not isinstance(key, _string_type):
             raise TypeError("Key need to be a string.")
 
         for idx in _range(self.__kcount[key]):
@@ -198,3 +200,22 @@ class VDFDict(dict):
         self.__omap = list(filter(lambda x: x[1] != key, self.__omap))
 
         del self.__kcount[key]
+
+    def has_duplicates(self):
+        """
+        Returns ``True`` if the dict contains keys with duplicates.
+        Recurses through any all keys with value that is ``VDFDict``.
+        """
+        for n in getattr(self.__kcount, _iter_values)():
+            if n != 1:
+                return True
+
+        def dict_recurse(obj):
+            for v in getattr(obj, _iter_values)():
+                if isinstance(v, VDFDict) and v.has_duplicates():
+                    return True
+                elif isinstance(v, dict):
+                    return dict_recurse(v)
+            return False
+
+        return dict_recurse(self)
