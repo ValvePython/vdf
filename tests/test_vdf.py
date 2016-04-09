@@ -275,6 +275,27 @@ class testcase_VDF(unittest.TestCase):
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
 
+    def test_hash_key(self):
+        INPUT = '#include "asd.vdf"'
+        EXPECTED = {'#include': 'asd.vdf'}
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
+        INPUT = '#base asd.vdf'
+        EXPECTED = {'#base': 'asd.vdf'}
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
+    def test_wierd_symbols_for_unquoted(self):
+        INPUT = 'a asd.vdf\nb language_*lol*\nc zxc_-*.sss//'
+        EXPECTED = {
+            'a': 'asd.vdf',
+            'b': 'language_*lol*',
+            'c': 'zxc_-*.sss',
+            }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
 
 class testcase_VDF_other(unittest.TestCase):
     def test_dumps_pretty_output(self):
