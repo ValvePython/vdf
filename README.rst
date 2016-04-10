@@ -4,20 +4,10 @@ VDF is Valve's KeyValue text file format
 
 https://developer.valvesoftware.com/wiki/KeyValues
 
-The module works just like ``json`` for (de)serilization to and from VDF.
+The module works just like ``json`` for (de)serialization to and from VDF.
 
-
-Problems & solutions
---------------------
-
-- There are known files that contain duplicate keys. This can be solved by
-  creating a class inheriting from ``dict`` and implementing a way to handle
-  duplicate keys. See example implementation of DuplicateOrderedDict_.
-
-- By default deserialization will return a ``dict``, which doesn't preserve nor guarantee
-  key order due to `hash randomization`_. If key order is important then
-  I suggest using ``collections.OrderedDict`` as mapper. See example below.
-
+| Supported versions: ``kv1``
+| Unsupported: ``kv2`` and ``kv3``
 
 Install
 -------
@@ -28,9 +18,28 @@ You can grab the latest release from https://pypi.python.org/pypi/vdf or via ``p
 
     pip install vdf
 
+Install the current dev version from ``github``
+
+.. code:: bash
+
+    pip install git+https://github.com/ValvePython/vdf
+
+
+Problems & solutions
+--------------------
+
+- There are known files that contain duplicate keys. This is supported the format and
+  makes mapping to ``dict`` impossible. For this case the module provides ``vdf.VDFDict``
+  that can be used as mapper instead of ``dict``. See the example section for details.
+
+- By default de-serialization will return a ``dict``, which doesn't preserve nor guarantee
+  key order due to `hash randomization`_. If key order is important then
+  I suggest using ``collections.OrderedDict``, or ``vdf.VDFDict``.
 
 Example usage
 -------------
+
+For text representation
 
 .. code:: python
 
@@ -50,16 +59,67 @@ Example usage
     vdf.dump(d, open('file2.txt','w'), pretty=True)
 
 
-Using ``OrderedDict`` to preserve key order.
+For binary representation
 
 .. code:: python
 
-    import vdf
-    from collections import OrderedDict
+    d = vdf.binary_loads(vdf_bytes)
+    b = vdf.binary_dumps(d)
 
-    # parsing vdf from file or string
-    d = vdf.load(open('file.txt'), mapper=OrderedDict)
-    d = vdf.loads(vdf_text, mapper=OrderedDict)
+Using an alternative mapper
+
+.. code:: python
+
+  d = vdf.loads(vdf_string, mapper=collections.OrderedDict)
+  d = vdf.loads(vdf_string, mapper=vdf.VDFDict)
+
+``VDFDict`` works much like the regular ``dict``, except it handles duplicates and remembers
+insert order. Additionally, keys can only be of type ``str``. The most important difference
+is that when trying to assigning a key that already exist it will create a duplicate instead
+of reassign the value to the existing key.
+
+.. code:: python
+
+  >>> d = vdf.VDFDict()
+  >>> d['key'] = 111
+  >>> d['key'] = 222
+  >>> d
+  VDFDict([('key', 111), ('key', 222)])
+  >>> d.items()
+  [('key', 111), ('key2', 222)]
+  >>> d['key']
+  111
+  >>> d[(0, key)]  # get the first duplicate
+  111
+  >>> d[(1, key)]  # get the second duplicate
+  222
+  >>> d.get_all_for('key')
+  [111, 222]
+
+  >>> d[(1, 'key')] = 123  # reassign specific duplicate
+  >>> d.get_all_for('key')
+  [111, 123]
+
+  >>> d['key'] = 333
+  >>> d.get_all_for('key')
+  [111, 123, 333]
+  >>> del d[(1, 'key')]
+  >>> d.get_all_for('key')
+  [111, 333]
+  >>> d[(1, 'key')]
+  333
+
+  >>> print vdf.dumps(d)
+  "key" "111"
+  "key" "333"
+
+  >>> d.has_duplicates()
+  True
+  >>> d.remove_all_for('key')
+  >>> len(d)
+  0
+  >>> d.has_duplicates()
+  False
 
 
 .. |pypi| image:: https://img.shields.io/pypi/v/vdf.svg?style=flat&label=latest%20version
