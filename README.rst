@@ -1,10 +1,12 @@
 |pypi| |license| |coverage| |scru| |master_build|
 
+Pure python module for (de)serialization to and from VDF that works just like ``json``.
+
+Tested and works on ``python2.7``, ``python3.3+``, ``pypy`` and ``pypy3``.
+
 VDF is Valve's KeyValue text file format
 
 https://developer.valvesoftware.com/wiki/KeyValues
-
-The module works just like ``json`` for (de)serialization to and from VDF.
 
 | Supported versions: ``kv1``
 | Unsupported: ``kv2`` and ``kv3``
