@@ -296,6 +296,42 @@ class testcase_VDF(unittest.TestCase):
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
 
+    def test_merge_multiple_keys_on(self):
+        INPUT = '''
+        a
+        {
+            a 1
+            b 2
+        }
+        a
+        {
+            a 3
+            c 4
+        }
+        '''
+
+        EXPECTED = {'a': {'a': '3', 'b': '2', 'c': '4'}}
+
+        self.assertEqual(vdf.loads(INPUT, merge_duplicate_keys=True), EXPECTED)
+
+    def test_merge_multiple_keys_off(self):
+        INPUT = '''
+        a
+        {
+            a 1
+            b 2
+        }
+        a
+        {
+            a 3
+            c 4
+        }
+        '''
+
+        EXPECTED = {'a': {'a': '3', 'c': '4'}}
+
+        self.assertEqual(vdf.loads(INPUT, merge_duplicate_keys=False), EXPECTED)
+
 
 class testcase_VDF_other(unittest.TestCase):
     def test_dumps_pretty_output(self):

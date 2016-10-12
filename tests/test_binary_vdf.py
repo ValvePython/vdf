@@ -71,3 +71,17 @@ class BinaryVDF(unittest.TestCase):
             vdf.binary_loads(None)
         with self.assertRaises(TypeError):
             vdf.binary_loads(b'', mapper=list)
+
+    def test_merge_multiple_keys_on(self):
+        # VDFDict([('a', VDFDict([('a', '1'), ('b', '2')])), ('a', VDFDict([('a', '3'), ('c', '4')]))])
+        test = b'\x00a\x00\x01a\x001\x00\x01b\x002\x00\x08\x00a\x00\x01a\x003\x00\x01c\x004\x00\x08\x08'
+        result = {'a': {'a': '3', 'b': '2', 'c': '4'}}
+
+        self.assertEqual(vdf.binary_loads(test, merge_duplicate_keys=True), result)
+
+    def test_merge_multiple_keys_off(self):
+        # VDFDict([('a', VDFDict([('a', '1'), ('b', '2')])), ('a', VDFDict([('a', '3'), ('c', '4')]))])
+        test = b'\x00a\x00\x01a\x001\x00\x01b\x002\x00\x08\x00a\x00\x01a\x003\x00\x01c\x004\x00\x08\x08'
+        result = {'a': {'a': '3', 'c': '4'}}
+
+        self.assertEqual(vdf.binary_loads(test, merge_duplicate_keys=False), result)

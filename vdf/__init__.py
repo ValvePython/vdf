@@ -1,7 +1,7 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "2.0"
+__version__ = "2.1"
 __author__ = "Rossen Georgiev"
 
 import re
@@ -10,7 +10,7 @@ import struct
 from io import StringIO as unicodeIO
 from vdf.vdict import VDFDict
 
-# Py2 & Py3 compability
+# Py2 & Py3 compatibility
 if sys.version_info[0] >= 3:
     string_type = str
     int_type = int
@@ -29,7 +29,7 @@ else:
         return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
 
 
-def parse(fp, mapper=dict):
+def parse(fp, mapper=dict, merge_duplicate_keys=True):
     """
     Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
     to a Python object.
@@ -37,6 +37,10 @@ def parse(fp, mapper=dict):
     ``mapper`` specifies the Python object used after deserializetion. ``dict` is
     used by default. Alternatively, ``collections.OrderedDict`` can be used if you
     wish to preserve key order. Or any object that acts like a ``dict``.
+
+    ``merge_duplicate_keys`` when ``True`` will merge multiple KeyValue lists with the
+    same key into one instead of overwriting. You can se this to ``False`` if you are
+    using ``VDFDict`` and need to preserve the duplicates.
     """
     if not issubclass(mapper, dict):
         raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
@@ -95,8 +99,12 @@ def parse(fp, mapper=dict):
 
             # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
             if val is None:
-                _m = mapper()
-                stack[-1][key] = _m
+                if merge_duplicate_keys and key in stack[-1]:
+                    _m = stack[-1][key]
+                else:
+                    _m = mapper()
+                    stack[-1][key] = _m
+
                 stack.append(_m)
                 expect_bracket = True
 
@@ -212,7 +220,7 @@ BIN_COLOR       = b'\x06'
 BIN_UINT64      = b'\x07'
 BIN_END         = b'\x08'
 
-def binary_loads(s, mapper=dict):
+def binary_loads(s, mapper=dict, merge_duplicate_keys=True):
     """
     Deserialize ``s`` (a ``str`` containing a VDF in "binary form")
     to a Python object.
@@ -220,6 +228,10 @@ def binary_loads(s, mapper=dict):
     ``mapper`` specifies the Python object used after deserializetion. ``dict` is
     used by default. Alternatively, ``collections.OrderedDict`` can be used if you
     wish to preserve key order. Or any object that acts like a ``dict``.
+
+    ``merge_duplicate_keys`` when ``True`` will merge multiple KeyValue lists with the
+    same key into one instead of overwriting. You can se this to ``False`` if you are
+    using ``VDFDict`` and need to preserve the duplicates.
     """
     if not isinstance(s, bytes):
         raise TypeError("Expected s to be bytes, got %s", type(s))
@@ -258,8 +270,11 @@ def binary_loads(s, mapper=dict):
         key, idx = read_string(s, idx)
 
         if t == BIN_NONE:
-            _m = mapper()
-            stack[-1][key] = _m
+            if merge_duplicate_keys and key in stack[-1]:
+                _m = stack[-1][key]
+            else:
+                _m = mapper()
+                stack[-1][key] = _m
             stack.append(_m)
         elif t == BIN_STRING:
             stack[-1][key], idx = read_string(s, idx)
