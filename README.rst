@@ -68,6 +68,16 @@ For binary representation
     d = vdf.binary_loads(vdf_bytes)
     b = vdf.binary_dumps(d)
 
+    # alternative format - VBKV
+
+    d = vdf.binary_loads(vdf_bytes, alt_format=True)
+    b = vdf.binary_dumps(d, alt_format=True)
+
+    # VBKV with header and CRC checking
+
+    d = vdf.vbkv_loads(vbkv_bytes)
+    b = vdf.vbkv_dumps(d)
+
 Using an alternative mapper
 
 .. code:: python
