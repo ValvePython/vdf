@@ -1,12 +1,13 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "2.1"
+__version__ = "2.2"
 __author__ = "Rossen Georgiev"
 
 import re
 import sys
 import struct
+from binascii import crc32
 from io import StringIO as unicodeIO
 from vdf.vdict import VDFDict
 
@@ -156,8 +157,7 @@ def load(fp, **kwargs):
 
 def dumps(obj, pretty=False):
     """
-    Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
-    ``.write()``-supporting file-like object).
+    Serialize ``obj`` to a VDF formatted ``str``.
     """
     if not isinstance(obj, dict):
         raise TypeError("Expected data to be an instance of``dict``")
@@ -169,7 +169,8 @@ def dumps(obj, pretty=False):
 
 def dump(obj, fp, pretty=False):
     """
-    Serialize ``obj`` to a JSON formatted ``str``.
+    Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
+    ``.write()``-supporting file-like object).
     """
     if not isinstance(obj, dict):
         raise TypeError("Expected data to be an instance of``dict``")
@@ -219,10 +220,11 @@ BIN_WIDESTRING  = b'\x05'
 BIN_COLOR       = b'\x06'
 BIN_UINT64      = b'\x07'
 BIN_END         = b'\x08'
+BIN_END_ALT     = b'\x0b'
 
-def binary_loads(s, mapper=dict, merge_duplicate_keys=True):
+def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
     """
-    Deserialize ``s`` (a ``str`` containing a VDF in "binary form")
+    Deserialize ``s`` (``bytes`` containing a VDF in "binary form")
     to a Python object.
 
     ``mapper`` specifies the Python object used after deserializetion. ``dict` is
@@ -256,12 +258,13 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True):
 
     stack = [mapper()]
     idx = 0
+    CURRENT_BIN_END = BIN_END if not alt_format else BIN_END_ALT
 
     while len(s) > idx:
         t = s[idx:idx+1]
         idx += 1
 
-        if t == BIN_END:
+        if t == CURRENT_BIN_END:
             if len(stack) > 1:
                 stack.pop()
                 continue
@@ -304,15 +307,13 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True):
 
     return stack.pop()
 
-def binary_dumps(obj):
+def binary_dumps(obj, alt_format=False):
     """
-    Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
-    ``.write()``-supporting file-like object).
-
+    Serialize ``obj`` to a binary VDF formatted ``bytes``.
     """
-    return b''.join(_binary_dump_gen(obj))
+    return b''.join(_binary_dump_gen(obj, alt_format=alt_format))
 
-def _binary_dump_gen(obj, level=0):
+def _binary_dump_gen(obj, level=0, alt_format=False):
     if level == 0 and len(obj) == 0:
         return
 
@@ -328,7 +329,7 @@ def _binary_dump_gen(obj, level=0):
 
         if isinstance(value, dict):
             yield BIN_NONE + key + BIN_NONE
-            for chunk in _binary_dump_gen(value, level+1):
+            for chunk in _binary_dump_gen(value, level+1, alt_format=alt_format):
                 yield chunk
         elif isinstance(value, UINT_64):
             yield BIN_UINT64 + key + BIN_NONE + struct.pack('<Q', value)
@@ -354,4 +355,36 @@ def _binary_dump_gen(obj, level=0):
         else:
             raise TypeError("Unsupported type: %s" % type(value))
 
-    yield BIN_END
+    yield BIN_END if not alt_format else BIN_END_ALT
+
+
+def vbkv_loads(s, mapper=dict, merge_duplicate_keys=True):
+    """
+    Deserialize ``s`` (``bytes`` containing a VBKV to a Python object.
+
+    ``mapper`` specifies the Python object used after deserializetion. ``dict` is
+    used by default. Alternatively, ``collections.OrderedDict`` can be used if you
+    wish to preserve key order. Or any object that acts like a ``dict``.
+
+    ``merge_duplicate_keys`` when ``True`` will merge multiple KeyValue lists with the
+    same key into one instead of overwriting. You can se this to ``False`` if you are
+    using ``VDFDict`` and need to preserve the duplicates.
+    """
+    if s[:4] != b'VBKV':
+        raise ValueError("Invalid header")
+
+    checksum, = struct.unpack('<i', s[4:8])
+
+    if checksum != crc32(s[8:]):
+        raise ValueError("Invalid checksum")
+
+    return binary_loads(s[8:], mapper, merge_duplicate_keys, alt_format=True)
+
+def vbkv_dumps(obj):
+    """
+    Serialize ``obj`` to a VBKV formatted ``bytes``.
+    """
+    data =  b''.join(_binary_dump_gen(obj, alt_format=True))
+    checksum = crc32(data)
+
+    return b'VBKV' + struct.pack('<i', checksum) + data

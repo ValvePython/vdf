@@ -33,6 +33,18 @@ class BinaryVDF(unittest.TestCase):
 
         self.assertEqual(data, result)
 
+        result = vdf.binary_loads(vdf.binary_dumps(data, alt_format=True), mapper=OrderedDict, alt_format=True)
+
+        self.assertEqual(data, result)
+
+        result = vdf.vbkv_loads(vdf.vbkv_dumps(data), mapper=OrderedDict)
+
+        self.assertEqual(data, result)
+
+    def test_vbkv_empty(self):
+        with self.assertRaises(ValueError):
+            vdf.vbkv_loads(b'')
+
     def test_loads_empty(self):
         self.assertEqual(vdf.binary_loads(b''), {})
 
@@ -41,6 +53,9 @@ class BinaryVDF(unittest.TestCase):
 
     def test_dumps_unicode(self):
         self.assertEqual(vdf.binary_dumps({u('a'): u('b')}), b'\x01a\x00b\x00\x08')
+
+    def test_dumps_unicode_alternative(self):
+        self.assertEqual(vdf.binary_dumps({u('a'): u('b')}, alt_format=True), b'\x01a\x00b\x00\x0b')
 
     def test_dumps_key_invalid_type(self):
         with self.assertRaises(TypeError):
@@ -51,6 +66,12 @@ class BinaryVDF(unittest.TestCase):
     def test_dumps_value_invalid_type(self):
         with self.assertRaises(TypeError):
             vdf.binary_dumps({'': None})
+
+    def test_alternative_format(self):
+        with self.assertRaises(SyntaxError):
+            vdf.binary_loads(b'\x00a\x00\x00b\x00\x0b\x0b')
+        with self.assertRaises(SyntaxError):
+            vdf.binary_loads(b'\x00a\x00\x00b\x00\x08\x08', alt_format=True)
 
     def test_loads_unbalanced_nesting(self):
         with self.assertRaises(SyntaxError):
@@ -85,3 +106,19 @@ class BinaryVDF(unittest.TestCase):
         result = {'a': {'a': '3', 'c': '4'}}
 
         self.assertEqual(vdf.binary_loads(test, merge_duplicate_keys=False), result)
+
+    def test_vbkv_loads_empty(self):
+        with self.assertRaises(ValueError):
+            vdf.vbkv_loads(b'')
+
+    def test_vbkv_dumps_empty(self):
+        self.assertEqual(vdf.vbkv_dumps({}), b'VBKV\x00\x00\x00\x00')
+
+    def test_vbkv_loads_invalid_header(self):
+        with self.assertRaises(ValueError):
+            vdf.vbkv_loads(b'DD1235764tdffhghsdf')
+
+    def test_vbkv_loads_invalid_checksum(self):
+        with self.assertRaises(ValueError):
+            vdf.vbkv_loads(b'VBKV\x01\x02\x03\x04\x00a\x00\x0b\x0b')
+
