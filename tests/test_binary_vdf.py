@@ -21,6 +21,7 @@ class BinaryVDF(unittest.TestCase):
             ('dddd', vdf.POINTER(1234)),
             ('fffff', vdf.COLOR(1234)),
             ('gggggg', vdf.UINT_64(1234)),
+            ('hhhhhhh', vdf.INT_64(-1234)),
         ]
 
         data = OrderedDict(pairs)

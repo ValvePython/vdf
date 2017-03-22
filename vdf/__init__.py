@@ -205,6 +205,9 @@ class BASE_INT(int_type):
 class UINT_64(BASE_INT):
     pass
 
+class INT_64(BASE_INT):
+    pass
+
 class POINTER(BASE_INT):
     pass
 
@@ -220,7 +223,8 @@ BIN_WIDESTRING  = b'\x05'
 BIN_COLOR       = b'\x06'
 BIN_UINT64      = b'\x07'
 BIN_END         = b'\x08'
-BIN_END_ALT     = b'\x0b'
+BIN_INT64       = b'\x0A'
+BIN_END_ALT     = b'\x0B'
 
 def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
     """
@@ -243,6 +247,7 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
     # helpers
     int32 = struct.Struct('<i')
     uint64 = struct.Struct('<Q')
+    int64 = struct.Struct('<q')
     float32 = struct.Struct('<f')
 
     def read_string(s, idx, wide=False):
@@ -296,6 +301,9 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
         elif t == BIN_UINT64:
             stack[-1][key] = UINT_64(uint64.unpack_from(s, idx)[0])
             idx += uint64.size
+        elif t == BIN_INT64:
+            stack[-1][key] = INT_64(int64.unpack_from(s, idx)[0])
+            idx += int64.size
         elif t == BIN_FLOAT32:
             stack[-1][key] = float32.unpack_from(s, idx)[0]
             idx += float32.size
@@ -319,6 +327,7 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
 
     int32 = struct.Struct('<i')
     uint64 = struct.Struct('<Q')
+    int64 = struct.Struct('<q')
     float32 = struct.Struct('<f')
 
     for key, value in obj.items():
@@ -332,7 +341,9 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
             for chunk in _binary_dump_gen(value, level+1, alt_format=alt_format):
                 yield chunk
         elif isinstance(value, UINT_64):
-            yield BIN_UINT64 + key + BIN_NONE + struct.pack('<Q', value)
+            yield BIN_UINT64 + key + BIN_NONE + uint64.pack(value)
+        elif isinstance(value, INT_64):
+            yield BIN_INT64 + key + BIN_NONE + int64.pack(value)
         elif isinstance(value, string_type):
             try:
                 value = value.encode('ascii') + BIN_NONE
@@ -342,7 +353,7 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
                 yield BIN_WIDESTRING
             yield key + BIN_NONE + value
         elif isinstance(value, float):
-            yield BIN_FLOAT32 + key + BIN_NONE + struct.pack('<f', value)
+            yield BIN_FLOAT32 + key + BIN_NONE + float32.pack(value)
         elif isinstance(value, (COLOR, POINTER, int, int_type)):
             if isinstance(value, COLOR):
                 yield BIN_COLOR
@@ -351,7 +362,7 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
             else:
                 yield BIN_INT32
             yield key + BIN_NONE
-            yield struct.pack('<i', value)
+            yield int32.pack(value)
         else:
             raise TypeError("Unsupported type: %s" % type(value))
 
