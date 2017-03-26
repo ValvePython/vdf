@@ -4,12 +4,11 @@ python:
     - "3.3"
     - "3.4"
     - "3.5"
-    - "3.5-dev"
     - "3.6"
-    - "3.6-dev"
     - "nightly"
     - "pypy"
     - "pypy3"
+    - "pypy-5.3.1"
 install:
     - make init
     - pip install coveralls
