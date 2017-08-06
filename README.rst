@@ -98,12 +98,12 @@ of reassign the value to the existing key.
   >>> d
   VDFDict([('key', 111), ('key', 222)])
   >>> d.items()
-  [('key', 111), ('key2', 222)]
+  [('key', 111), ('key', 222)]
   >>> d['key']
   111
-  >>> d[(0, key)]  # get the first duplicate
+  >>> d[(0, 'key')]  # get the first duplicate
   111
-  >>> d[(1, key)]  # get the second duplicate
+  >>> d[(1, 'key')]  # get the second duplicate
   222
   >>> d.get_all_for('key')
   [111, 222]
