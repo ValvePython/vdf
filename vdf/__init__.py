@@ -1,7 +1,7 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "2.3"
+__version__ = "2.4"
 __author__ = "Rossen Georgiev"
 
 import re
@@ -258,7 +258,7 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
         if wide:
             result = result.decode('utf-16')
         elif bytes is not str:
-            result = result.decode('ascii')
+            result = result.decode('utf-8')
         return result, end + (2 if wide else 1)
 
     stack = [mapper()]
