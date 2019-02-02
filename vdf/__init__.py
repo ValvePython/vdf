@@ -1,7 +1,7 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "2.4"
+__version__ = "2.5"
 __author__ = "Rossen Georgiev"
 
 import re
@@ -44,7 +44,7 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True):
     using ``VDFDict`` and need to preserve the duplicates.
     """
     if not issubclass(mapper, dict):
-        raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
+        raise TypeError("Expected mapper to be subclass of dict, got %s" % type(mapper))
     if not hasattr(fp, 'readline'):
         raise TypeError("Expected fp to be a file-like object supporting line iteration")
 
@@ -137,7 +137,7 @@ def loads(s, **kwargs):
     document) to a Python object.
     """
     if not isinstance(s, string_type):
-        raise TypeError("Expected s to be a str, got %s", type(s))
+        raise TypeError("Expected s to be a str, got %s" % type(s))
 
     try:
         fp = unicodeIO(s)
@@ -240,9 +240,9 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
     using ``VDFDict`` and need to preserve the duplicates.
     """
     if not isinstance(s, bytes):
-        raise TypeError("Expected s to be bytes, got %s", type(s))
+        raise TypeError("Expected s to be bytes, got %s" % type(s))
     if not issubclass(mapper, dict):
-        raise TypeError("Expected mapper to be subclass of dict, got %s", type(mapper))
+        raise TypeError("Expected mapper to be subclass of dict, got %s" % type(mapper))
 
     # helpers
     int32 = struct.Struct('<i')
