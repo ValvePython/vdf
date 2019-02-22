@@ -29,8 +29,36 @@ else:
     def strip_bom(line):
         return line.lstrip(BOMS if isinstance(line, str) else BOMS_UNICODE)
 
+# string escaping
+_unescape_char_map = {
+    r"\n": "\n",
+    r"\t": "\t",
+    r"\v": "\v",
+    r"\b": "\b",
+    r"\r": "\r",
+    r"\f": "\f",
+    r"\a": "\a",
+    r"\\": "\\",
+    r"\?": "?",
+    r"\"": "\"",
+    r"\'": "\'",
+}
+_escape_char_map = {v: k for k, v in _unescape_char_map.items()}
 
-def parse(fp, mapper=dict, merge_duplicate_keys=True):
+def _re_escape_match(m):
+    return _escape_char_map[m.group()]
+
+def _re_unescape_match(m):
+    return _unescape_char_map[m.group()]
+
+def _escape(text):
+    return re.sub(r"[\n\t\v\b\r\f\a\\\?\"']", _re_escape_match, text)
+
+def _unescape(text):
+    return re.sub(r"(\\n|\\t|\\v|\\b|\\r|\\f|\\a|\\\\|\\\?|\\\"|\\')", _re_unescape_match, text)
+
+# parsing and dumping for KV1
+def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
     """
     Deserialize ``s`` (a ``str`` or ``unicode`` instance containing a VDF)
     to a Python object.
@@ -51,10 +79,10 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True):
     stack = [mapper()]
     expect_bracket = False
 
-    re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])+)"|(?P<key>#?[a-z0-9\-\_]+))'
+    re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])+)"|(?P<key>#?[a-z0-9\-\_\\\?]+))'
                              r'([ \t]*('
                              r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
-                             r'|(?P<val>[a-z0-9\-\_\*\.]+)'
+                             r'|(?P<val>[a-z0-9\-\_\\\?\*\.]+)'
                              r'))?',
                              flags=re.I)
 
@@ -98,6 +126,9 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True):
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
             val = match.group('val') if match.group('qval') is None else match.group('qval')
 
+            if escaped:
+                key = _unescape(key)
+
             # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
             if val is None:
                 if merge_duplicate_keys and key in stack[-1]:
@@ -120,7 +151,7 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True):
                     except StopIteration:
                         raise SyntaxError("vdf.parse: unexpected EOF (open value quote?)")
 
-                stack[-1][key] = val
+                stack[-1][key] = _unescape(val) if escaped else val
 
             # exit the loop
             break
@@ -155,19 +186,21 @@ def load(fp, **kwargs):
     return parse(fp, **kwargs)
 
 
-def dumps(obj, pretty=False):
+def dumps(obj, pretty=False, escaped=True):
     """
     Serialize ``obj`` to a VDF formatted ``str``.
     """
     if not isinstance(obj, dict):
         raise TypeError("Expected data to be an instance of``dict``")
     if not isinstance(pretty, bool):
-        raise TypeError("Expected pretty to be bool")
+        raise TypeError("Expected pretty to be of type bool")
+    if not isinstance(escaped, bool):
+        raise TypeError("Expected escaped to be of type bool")
 
-    return ''.join(_dump_gen(obj, pretty))
+    return ''.join(_dump_gen(obj, pretty, escaped))
 
 
-def dump(obj, fp, pretty=False):
+def dump(obj, fp, pretty=False, escaped=True):
     """
     Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
@@ -176,12 +209,16 @@ def dump(obj, fp, pretty=False):
         raise TypeError("Expected data to be an instance of``dict``")
     if not hasattr(fp, 'write'):
         raise TypeError("Expected fp to have write() method")
+    if not isinstance(pretty, bool):
+        raise TypeError("Expected pretty to be of type bool")
+    if not isinstance(escaped, bool):
+        raise TypeError("Expected escaped to be of type bool")
 
-    for chunk in _dump_gen(obj, pretty):
+    for chunk in _dump_gen(obj, pretty, escaped):
         fp.write(chunk)
 
 
-def _dump_gen(data, pretty=False, level=0):
+def _dump_gen(data, pretty=False, escaped=True, level=0):
     indent = "\t"
     line_indent = ""
 
@@ -189,15 +226,22 @@ def _dump_gen(data, pretty=False, level=0):
         line_indent = indent * level
 
     for key, value in data.items():
+        if escaped and isinstance(key, string_type):
+            key = _escape(key)
+
         if isinstance(value, dict):
             yield '%s"%s"\n%s{\n' % (line_indent, key, line_indent)
-            for chunk in _dump_gen(value, pretty, level+1):
+            for chunk in _dump_gen(value, pretty, escaped, level+1):
                 yield chunk
             yield "%s}\n" % line_indent
         else:
+            if escaped and isinstance(value, string_type):
+                value = _escape(value)
+
             yield '%s"%s" "%s"\n' % (line_indent, key, value)
 
 
+# binary VDF
 class BASE_INT(int_type):
     def __repr__(self):
         return "%s(%d)" % (self.__class__.__name__, self)
