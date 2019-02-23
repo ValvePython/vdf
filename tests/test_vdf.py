@@ -10,6 +10,21 @@ except ImportError:
 import vdf
 
 
+class testcase_helpers_escapes(unittest.TestCase):
+    # https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L68
+    esc_chars_raw = "aa\n\t\v\b\r\f\a\\?\"'bb"
+    esc_chars_escaped = 'aa\\n\\t\\v\\b\\r\\f\\a\\\\\\?\\"\\\'bb'
+
+    def test_escape(self):
+        self.assertEqual(vdf._escape(self.esc_chars_raw), self.esc_chars_escaped)
+
+    def test_unescape(self):
+        self.assertEqual(vdf._unescape(self.esc_chars_escaped), self.esc_chars_raw)
+
+    def test_escape_unescape(self):
+        self.assertEqual(vdf._unescape(vdf._escape(self.esc_chars_raw)), self.esc_chars_raw)
+
+
 class testcase_helpers_load(unittest.TestCase):
     def setUp(self):
         self.f = StringIO()
@@ -140,6 +155,7 @@ class testcase_VDF(unittest.TestCase):
         }
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
     def test_keyvalue_open_quoted(self):
         INPUT = (
@@ -157,6 +173,7 @@ class testcase_VDF(unittest.TestCase):
         }
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
     def test_multi_keyvalue_pairs(self):
         INPUT = '''
@@ -188,6 +205,7 @@ class testcase_VDF(unittest.TestCase):
         }
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
     def test_deep_nesting(self):
         INPUT = '''
@@ -236,6 +254,7 @@ class testcase_VDF(unittest.TestCase):
         }
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
     def test_comments_and_blank_lines(self):
         INPUT = '''
@@ -274,6 +293,7 @@ class testcase_VDF(unittest.TestCase):
         }
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
     def test_hash_key(self):
         INPUT = '#include "asd.vdf"'
@@ -285,6 +305,7 @@ class testcase_VDF(unittest.TestCase):
         EXPECTED = {'#base': 'asd.vdf'}
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
     def test_wierd_symbols_for_unquoted(self):
         INPUT = 'a asd.vdf\nb language_*lol*\nc zxc_-*.sss//'
@@ -295,6 +316,7 @@ class testcase_VDF(unittest.TestCase):
             }
 
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
     def test_merge_multiple_keys_on(self):
         INPUT = '''
@@ -313,6 +335,7 @@ class testcase_VDF(unittest.TestCase):
         EXPECTED = {'a': {'a': '3', 'b': '2', 'c': '4'}}
 
         self.assertEqual(vdf.loads(INPUT, merge_duplicate_keys=True), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False, merge_duplicate_keys=True), EXPECTED)
 
     def test_merge_multiple_keys_off(self):
         INPUT = '''
@@ -331,6 +354,33 @@ class testcase_VDF(unittest.TestCase):
         EXPECTED = {'a': {'a': '3', 'c': '4'}}
 
         self.assertEqual(vdf.loads(INPUT, merge_duplicate_keys=False), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False, merge_duplicate_keys=False), EXPECTED)
+
+    def test_escape_before_last(self):
+        INPUT = r'''
+        "aaa\\" "1"
+        "1" "bbb\\"
+        '''
+
+        EXPECTED = {
+            "aaa\\": "1",
+            "1": "bbb\\",
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
+    def test_escape_before_last_unescaped(self):
+        INPUT = r'''
+        "aaa\\" "1"
+        "1" "bbb\\"
+        '''
+
+        EXPECTED = {
+            "aaa\\\\": "1",
+            "1": "bbb\\\\",
+        }
+
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
 
 class testcase_VDF_other(unittest.TestCase):
