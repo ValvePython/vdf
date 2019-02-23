@@ -1,3 +1,2 @@
-nose
-coverage
 mock
+pytest-cov==2.6.0
