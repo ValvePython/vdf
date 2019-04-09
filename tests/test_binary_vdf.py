@@ -14,7 +14,7 @@ class BinaryVDF(unittest.TestCase):
     def test_simple(self):
         pairs = [
             ('a', 'test'),
-            ('a2', b'\xff\xfe0\x041\x042\x043\x04'.decode('utf-16')),
+            ('a2', b'\xd0\xb0\xd0\xb1\xd0\xb2\xd0\xb3'.decode('utf-8')),
             ('bb', 1),
             ('bb2', -500),
             ('ccc', 1.0),
