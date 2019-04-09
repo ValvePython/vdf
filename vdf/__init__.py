@@ -303,6 +303,11 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
             result = result.decode('utf-16')
         elif bytes is not str:
             result = result.decode('utf-8')
+        else:
+            try:
+                result.decode('ascii')
+            except:
+                result = result.decode('utf-8')
         return result, end + (2 if wide else 1)
 
     stack = [mapper()]
@@ -376,7 +381,7 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
 
     for key, value in obj.items():
         if isinstance(key, string_type):
-            key = key.encode('ascii')
+            key = key.encode('utf-8')
         else:
             raise TypeError("dict keys must be of type str, got %s" % type(key))
 
