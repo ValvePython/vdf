@@ -14,7 +14,7 @@ https://developer.valvesoftware.com/wiki/KeyValues
 Install
 -------
 
-You can grab the latest release from https://pypi.python.org/pypi/vdf or via ``pip``
+You can grab the latest release from https://pypi.org/project/vdf/ or via ``pip``
 
 .. code:: bash
 
@@ -135,11 +135,11 @@ of reassign the value to the existing key.
 
 
 .. |pypi| image:: https://img.shields.io/pypi/v/vdf.svg?style=flat&label=latest%20version
-    :target: https://pypi.python.org/pypi/vdf
+    :target: https://pypi.org/project/vdf/
     :alt: Latest version released on PyPi
 
 .. |license| image:: https://img.shields.io/pypi/l/vdf.svg?style=flat&label=license
-    :target: https://pypi.python.org/pypi/vdf
+    :target: https://pypi.org/project/vdf/
     :alt: MIT License
 
 .. |coverage| image:: https://img.shields.io/coveralls/ValvePython/vdf/master.svg?style=flat
