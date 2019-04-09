@@ -1,7 +1,7 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "3.0"
+__version__ = "3.1"
 __author__ = "Rossen Georgiev"
 
 import re
@@ -390,7 +390,7 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
             yield BIN_INT64 + key + BIN_NONE + int64.pack(value)
         elif isinstance(value, string_type):
             try:
-                value = value.encode('ascii') + BIN_NONE
+                value = value.encode('utf-8') + BIN_NONE
                 yield BIN_STRING
             except:
                 value = value.encode('utf-16') + BIN_NONE*2
