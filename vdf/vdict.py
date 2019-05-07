@@ -5,7 +5,7 @@ if sys.version_info[0] >= 3:
     _iter_values = 'values'
     _range = range
     _string_type = str
-    import collections as _c
+    import collections.abc as _c
     class _kView(_c.KeysView):
         def __iter__(self):
             return self._mapping.iterkeys()
