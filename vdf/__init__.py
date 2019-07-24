@@ -300,14 +300,14 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
             raise SyntaxError("Unterminated cstring, index: %d" % idx)
         result = s[idx:end]
         if wide:
-            result = result.decode('utf-16')
+            result = result.decode('utf-16', 'replace')
         elif bytes is not str:
-            result = result.decode('utf-8')
+            result = result.decode('utf-8', 'replace')
         else:
             try:
                 result.decode('ascii')
             except:
-                result = result.decode('utf-8')
+                result = result.decode('utf-8', 'replace')
         return result, end + (2 if wide else 1)
 
     stack = [mapper()]
