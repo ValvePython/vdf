@@ -123,3 +123,8 @@ class BinaryVDF(unittest.TestCase):
         with self.assertRaises(ValueError):
             vdf.vbkv_loads(b'VBKV\x01\x02\x03\x04\x00a\x00\x0b\x0b')
 
+    def test_loads_utf8_invalmid(self):
+        self.assertEqual({'aaa': b'bb\xef\xbf\xbdbb'.decode('utf-8')}, vdf.binary_loads(b'\x01aaa\x00bb\xffbb\x00\x08'))
+
+    def test_loads_utf16(self):
+        self.assertEqual({'aaa': b'b\x00b\x00\xff\xffb\x00b\x00'.decode('utf-16le')}, vdf.binary_loads(b'\x05aaa\x00b\x00b\x00\xff\xffb\x00b\x00\x00\x00\x08'))

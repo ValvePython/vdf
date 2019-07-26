@@ -295,12 +295,18 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
     float32 = struct.Struct('<f')
 
     def read_string(s, idx, wide=False):
-        end = s.find(b'\x00\x00' if wide else b'\x00', idx)
+        if wide:
+            end = s.find(b'\x00\x00', idx)
+            if (end - idx) % 2 != 0:
+                end += 1
+        else:
+            end = s.find(b'\x00', idx)
+
         if end == -1:
             raise SyntaxError("Unterminated cstring, index: %d" % idx)
         result = s[idx:end]
         if wide:
-            result = result.decode('utf-16', 'replace')
+            result = result.decode('utf-16')
         elif bytes is not str:
             result = result.decode('utf-8', 'replace')
         else:
