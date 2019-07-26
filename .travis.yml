@@ -7,7 +7,11 @@ python:
     - "nightly"
     - "pypy"
     - "pypy3"
-    - "pypy-5.3.1"
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 install:
     - make init
     - pip install coveralls==1.1
