@@ -86,8 +86,8 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                              r'))?',
                              flags=re.I)
 
-    for idx, line in enumerate(fp):
-        if idx == 0:
+    for lineno, line in enumerate(fp, 1):
+        if lineno == 1:
             line = strip_bom(line)
 
         line = line.lstrip()
@@ -102,7 +102,8 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
             continue
 
         if expect_bracket:
-            raise SyntaxError("vdf.parse: expected openning bracket (line %d)" % (idx + 1))
+            raise SyntaxError("vdf.parse: expected openning bracket",
+                              (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 1, line))
 
         # one level back
         if line[0] == "}":
@@ -110,7 +111,8 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                 stack.pop()
                 continue
 
-            raise SyntaxError("vdf.parse: one too many closing parenthasis (line %d)" % (idx + 1))
+            raise SyntaxError("vdf.parse: one too many closing parenthasis",
+                              (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
         # parse keyvalue pairs
         while True:
@@ -121,7 +123,8 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                     line += next(fp)
                     continue
                 except StopIteration:
-                    raise SyntaxError("vdf.parse: unexpected EOF (open key quote?)")
+                    raise SyntaxError("vdf.parse: unexpected EOF (open key quote?)",
+                                      (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
             val = match.group('val') if match.group('qval') is None else match.group('qval')
@@ -149,7 +152,8 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                         line += next(fp)
                         continue
                     except StopIteration:
-                        raise SyntaxError("vdf.parse: unexpected EOF (open value quote?)")
+                        raise SyntaxError("vdf.parse: unexpected EOF (open quote for value?)",
+                                          (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
                 stack[-1][key] = _unescape(val) if escaped else val
 
@@ -157,7 +161,8 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
             break
 
     if len(stack) != 1:
-        raise SyntaxError("vdf.parse: unclosed parenthasis or quotes (EOF)")
+        raise SyntaxError("vdf.parse: unclosed parenthasis or quotes (EOF)",
+                           (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
     return stack.pop()
 
@@ -303,7 +308,7 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
             end = s.find(b'\x00', idx)
 
         if end == -1:
-            raise SyntaxError("Unterminated cstring, index: %d" % idx)
+            raise SyntaxError("Unterminated cstring (offset: %d)" % idx)
         result = s[idx:end]
         if wide:
             result = result.decode('utf-16')
@@ -363,10 +368,10 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
             stack[-1][key] = float32.unpack_from(s, idx)[0]
             idx += float32.size
         else:
-            raise SyntaxError("Unknown data type at index %d: %s" % (idx-1, repr(t)))
+            raise SyntaxError("Unknown data type at offset %d: %s" % (idx-1, repr(t)))
 
     if len(s) != idx or len(stack) != 1:
-        raise SyntaxError("Binary VDF ended at index %d, but length is %d" % (idx, len(s)))
+        raise SyntaxError("Binary VDF ended at offset %d, but length is %d" % (idx, len(s)))
 
     return stack.pop()
 
