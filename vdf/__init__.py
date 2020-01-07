@@ -134,7 +134,7 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
 
             # we have a key with value in parenthesis, so we make a new dict obj (level deeper)
             if val is None:
-                if merge_duplicate_keys and key in stack[-1]:
+                if merge_duplicate_keys and key in stack[-1] and not isinstance(stack[-1][key], mapper):
                     _m = stack[-1][key]
                 else:
                     _m = mapper()
