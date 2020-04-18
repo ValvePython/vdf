@@ -8,4 +8,4 @@ filter:
         - 'vdf2json/*'
 tools:
     external_code_coverage:
-        runs: 9
+        runs: 8
