@@ -1,23 +1,22 @@
 language: python
-python:
-    - "2.7"
-    - "3.4"
-    - "3.5"
-    - "3.6"
-    - "pypy"
-    - "pypy3"
+os: linux
+
 jobs:
   include:
+    - python: 2.7
+    - python: 3.4
+    - python: 3.5
+    - python: 3.6
     - python: 3.7
-      os: linux
     - python: 3.8
-      os: linux
+    - python: "pypy"
+    - python: "pypy3"
 install:
-    - make init
-    - pip install coveralls==1.1
+    - pip install -r requirements.txt
+    - pip install coveralls
     - pip install scrutinizer-ocular
 script:
-    make test
+    - PYTHONHASHSEED=0 python -m pytest --cov=vdf tests
 after_success:
     - coveralls
     - ocular --data-file ".coverage"
