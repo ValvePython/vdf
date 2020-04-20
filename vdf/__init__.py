@@ -9,6 +9,7 @@ import sys
 import struct
 from binascii import crc32
 from io import StringIO as unicodeIO
+from io import BytesIO
 from vdf.vdict import VDFDict
 
 # Py2 & Py3 compatibility
@@ -155,7 +156,11 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                         raise SyntaxError("vdf.parse: unexpected EOF (open quote for value?)",
                                           (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
-                stack[-1][key] = _unescape(val) if escaped else val
+                try:
+                    stack[-1][key] = _unescape(val) if escaped else val
+                except:
+                    raise SyntaxError("vdf.parse: debug",
+                                      (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
             # exit the loop
             break
@@ -275,9 +280,9 @@ BIN_END         = b'\x08'
 BIN_INT64       = b'\x0A'
 BIN_END_ALT     = b'\x0B'
 
-def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
+def binary_loads(b, mapper=dict, merge_duplicate_keys=True, alt_format=False, raise_on_remaining=True):
     """
-    Deserialize ``s`` (``bytes`` containing a VDF in "binary form")
+    Deserialize ``b`` (``bytes`` containing a VDF in "binary form")
     to a Python object.
 
     ``mapper`` specifies the Python object used after deserializetion. ``dict` is
@@ -288,8 +293,30 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
     same key into one instead of overwriting. You can se this to ``False`` if you are
     using ``VDFDict`` and need to preserve the duplicates.
     """
-    if not isinstance(s, bytes):
-        raise TypeError("Expected s to be bytes, got %s" % type(s))
+    if not isinstance(b, bytes):
+        raise TypeError("Expected s to be bytes, got %s" % type(b))
+    if not issubclass(mapper, dict):
+        raise TypeError("Expected mapper to be subclass of dict, got %s" % type(mapper))
+
+    fp = BytesIO(b)
+
+    return binary_load(fp, mapper, merge_duplicate_keys, alt_format, raise_on_remaining)
+
+def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, raise_on_remaining=False):
+    """
+    Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
+    binary VDF) to a Python object.
+
+    ``mapper`` specifies the Python object used after deserializetion. ``dict` is
+    used by default. Alternatively, ``collections.OrderedDict`` can be used if you
+    wish to preserve key order. Or any object that acts like a ``dict``.
+
+    ``merge_duplicate_keys`` when ``True`` will merge multiple KeyValue lists with the
+    same key into one instead of overwriting. You can se this to ``False`` if you are
+    using ``VDFDict`` and need to preserve the duplicates.
+    """
+    if not hasattr(fp, 'read') or not hasattr(fp, 'tell') or not hasattr(fp, 'seek'):
+        raise TypeError("Expected fp to be a file-like object with tell()/seek() and read() returning bytes")
     if not issubclass(mapper, dict):
         raise TypeError("Expected mapper to be subclass of dict, got %s" % type(mapper))
 
@@ -299,17 +326,30 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
     int64 = struct.Struct('<q')
     float32 = struct.Struct('<f')
 
-    def read_string(s, idx, wide=False):
-        if wide:
-            end = s.find(b'\x00\x00', idx)
-            if (end - idx) % 2 != 0:
-                end += 1
-        else:
-            end = s.find(b'\x00', idx)
+    def read_string(fp, wide=False):
+        buf, end = b'', -1
+        offset = fp.tell()
 
-        if end == -1:
-            raise SyntaxError("Unterminated cstring (offset: %d)" % idx)
-        result = s[idx:end]
+        # locate string end
+        while end == -1:
+            chunk = fp.read(64)
+
+            if chunk == b'':
+                raise SyntaxError("Unterminated cstring (offset: %d)" % offset)
+
+            buf += chunk
+            end = buf.find(b'\x00\x00' if wide else b'\x00')
+
+        if wide:
+            end += end % 2
+
+        # rewind fp
+        fp.seek(end - len(buf) + (2 if wide else 1), 1)
+
+        # decode string
+        result = buf[:end]
+        print(repr(result))
+
         if wide:
             result = result.decode('utf-16')
         elif bytes is not str:
@@ -319,23 +359,20 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
                 result.decode('ascii')
             except:
                 result = result.decode('utf-8', 'replace')
-        return result, end + (2 if wide else 1)
+
+        return result
 
     stack = [mapper()]
-    idx = 0
     CURRENT_BIN_END = BIN_END if not alt_format else BIN_END_ALT
 
-    while len(s) > idx:
-        t = s[idx:idx+1]
-        idx += 1
-
+    for t in iter(lambda: fp.read(1), b''):
         if t == CURRENT_BIN_END:
             if len(stack) > 1:
                 stack.pop()
                 continue
             break
 
-        key, idx = read_string(s, idx)
+        key = read_string(fp)
 
         if t == BIN_NONE:
             if merge_duplicate_keys and key in stack[-1]:
@@ -345,11 +382,11 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
                 stack[-1][key] = _m
             stack.append(_m)
         elif t == BIN_STRING:
-            stack[-1][key], idx = read_string(s, idx)
+            stack[-1][key] = read_string(fp)
         elif t == BIN_WIDESTRING:
-            stack[-1][key], idx = read_string(s, idx, wide=True)
+            stack[-1][key] = read_string(fp, wide=True)
         elif t in (BIN_INT32, BIN_POINTER, BIN_COLOR):
-            val = int32.unpack_from(s, idx)[0]
+            val = int32.unpack(fp.read(int32.size))[0]
 
             if t == BIN_POINTER:
                 val = POINTER(val)
@@ -357,21 +394,20 @@ def binary_loads(s, mapper=dict, merge_duplicate_keys=True, alt_format=False):
                 val = COLOR(val)
 
             stack[-1][key] = val
-            idx += int32.size
         elif t == BIN_UINT64:
-            stack[-1][key] = UINT_64(uint64.unpack_from(s, idx)[0])
-            idx += uint64.size
+            stack[-1][key] = UINT_64(uint64.unpack(fp.read(int64.size))[0])
         elif t == BIN_INT64:
-            stack[-1][key] = INT_64(int64.unpack_from(s, idx)[0])
-            idx += int64.size
+            stack[-1][key] = INT_64(int64.unpack(fp.read(int64.size))[0])
         elif t == BIN_FLOAT32:
-            stack[-1][key] = float32.unpack_from(s, idx)[0]
-            idx += float32.size
+            stack[-1][key] = float32.unpack(fp.read(float32.size))[0]
         else:
-            raise SyntaxError("Unknown data type at offset %d: %s" % (idx-1, repr(t)))
+            raise SyntaxError("Unknown data type at offset %d: %s" % (fp.tell() - 1, repr(t)))
 
-    if len(s) != idx or len(stack) != 1:
-        raise SyntaxError("Binary VDF ended at offset %d, but length is %d" % (idx, len(s)))
+    if len(stack) != 1:
+        raise SyntaxError("Reached EOF, but Binary VDF is incomplete")
+    if raise_on_remaining and fp.read(1) != b'':
+        fp.seek(-1, 1)
+        raise SyntaxError("Binary VDF ended at offset %d, but there is more data remaining" % (fp.tell() - 1))
 
     return stack.pop()
 
@@ -380,6 +416,16 @@ def binary_dumps(obj, alt_format=False):
     Serialize ``obj`` to a binary VDF formatted ``bytes``.
     """
     return b''.join(_binary_dump_gen(obj, alt_format=alt_format))
+
+def binary_dump(obj, fp, alt_format=False):
+    """
+    Serialize ``obj`` to a binary VDF formatted ``bytes`` and write it to ``fp`` filelike object
+    """
+    if not hasattr(fp, 'write'):
+        raise TypeError("Expected fp to have write() method")
+
+    for chunk in _binary_dump_gen(obj, alt_format=alt_format):
+        fp.write(chunk)
 
 def _binary_dump_gen(obj, level=0, alt_format=False):
     if level == 0 and len(obj) == 0:

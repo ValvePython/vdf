@@ -2,6 +2,7 @@ import sys
 import unittest
 
 import vdf
+from io import BytesIO
 from collections import OrderedDict
 
 u = str if sys.version_info >= (3,) else unicode
@@ -48,9 +49,15 @@ class BinaryVDF(unittest.TestCase):
 
     def test_loads_empty(self):
         self.assertEqual(vdf.binary_loads(b''), {})
+        self.assertEqual(vdf.binary_load(BytesIO(b'')), {})
 
     def test_dumps_empty(self):
         self.assertEqual(vdf.binary_dumps({}), b'')
+
+        buf = BytesIO()
+        vdf.binary_dump({}, buf)
+
+        self.assertEqual(buf.getvalue(), b'')
 
     def test_dumps_unicode(self):
         self.assertEqual(vdf.binary_dumps({u('a'): u('b')}), b'\x01a\x00b\x00\x08')
@@ -107,6 +114,27 @@ class BinaryVDF(unittest.TestCase):
         result = {'a': {'a': '3', 'c': '4'}}
 
         self.assertEqual(vdf.binary_loads(test, merge_duplicate_keys=False), result)
+
+    def test_raise_on_remaining(self):
+        # default binary_loads is to raise
+        with self.assertRaises(SyntaxError):
+            vdf.binary_loads(b'\x01key\x00value\x00\x08' + b'aaaa')
+
+        # do not raise
+        self.assertEqual(vdf.binary_loads(b'\x01key\x00value\x00\x08' + b'aaaa', raise_on_remaining=False), {'key': 'value'})
+
+    def test_raise_on_remaining_with_file(self):
+        buf = BytesIO(b'\x01key\x00value\x00\x08' + b'aaaa')
+
+        # binary_load doesn't raise by default
+        self.assertEqual(vdf.binary_load(buf), {'key': 'value'})
+        self.assertEqual(buf.read(), b'aaaa')
+
+        # raise when extra data remains
+        buf.seek(0)
+        with self.assertRaises(SyntaxError):
+            vdf.binary_load(buf, raise_on_remaining=True)
+        self.assertEqual(buf.read(), b'aaaa')
 
     def test_vbkv_loads_empty(self):
         with self.assertRaises(ValueError):
