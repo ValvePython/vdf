@@ -162,11 +162,7 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                         raise SyntaxError("vdf.parse: unexpected EOF (open quote for value?)",
                                           (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
-                try:
-                    stack[-1][key] = _unescape(val) if escaped else val
-                except:
-                    raise SyntaxError("vdf.parse: debug",
-                                      (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
+                stack[-1][key] = _unescape(val) if escaped else val
 
             # exit the loop
             break
