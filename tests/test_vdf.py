@@ -85,11 +85,14 @@ class testcase_helpers_dump(unittest.TestCase):
         self.f.close()
 
     def test_dump_params_invalid(self):
+        # pretty/escaped only accept bool
         with self.assertRaises(TypeError):
-            # pretty/escaped only accept bool
             vdf.dump({'a': 1}, StringIO(), pretty=1)
+        with self.assertRaises(TypeError):
             vdf.dumps({'a': 1}, pretty=1)
+        with self.assertRaises(TypeError):
             vdf.dump({'a': 1}, StringIO(), escaped=1)
+        with self.assertRaises(TypeError):
             vdf.dumps({'a': 1}, escaped=1)
 
     def test_routine_dumps_asserts(self):
