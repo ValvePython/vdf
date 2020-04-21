@@ -84,6 +84,14 @@ class testcase_helpers_dump(unittest.TestCase):
     def tearDown(self):
         self.f.close()
 
+    def test_dump_params_invalid(self):
+        with self.assertRaises(TypeError):
+            # pretty/escaped only accept bool
+            vdf.dump({'a': 1}, StringIO(), pretty=1)
+            vdf.dumps({'a': 1}, pretty=1)
+            vdf.dump({'a': 1}, StringIO(), escaped=1)
+            vdf.dumps({'a': 1}, escaped=1)
+
     def test_routine_dumps_asserts(self):
         for x in [5, 5.5, 1.0j, True, None, (), {}, lambda: 0, sys.stdin, self.f]:
             for y in [5, 5.5, 1.0j, None, [], (), {}, lambda: 0, sys.stdin, self.f]:

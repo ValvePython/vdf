@@ -65,6 +65,16 @@ class BinaryVDF(unittest.TestCase):
     def test_dumps_unicode_alternative(self):
         self.assertEqual(vdf.binary_dumps({u('a'): u('b')}, alt_format=True), b'\x01a\x00b\x00\x0b')
 
+    def test_dump_params_invalid(self):
+        with self.assertRaises(TypeError):
+            vdf.binary_dump([], BytesIO())
+            vdf.binary_dump({}, b'aaaa')
+
+    def test_dumps_params_invalid(self):
+        with self.assertRaises(TypeError):
+            vdf.binary_dumps([])
+            vdf.binary_dumps(b'aaaa')
+
     def test_dumps_key_invalid_type(self):
         with self.assertRaises(TypeError):
             vdf.binary_dumps({1:1})
@@ -80,6 +90,19 @@ class BinaryVDF(unittest.TestCase):
             vdf.binary_loads(b'\x00a\x00\x00b\x00\x0b\x0b')
         with self.assertRaises(SyntaxError):
             vdf.binary_loads(b'\x00a\x00\x00b\x00\x08\x08', alt_format=True)
+
+    def test_load_params_invalid(self):
+        with self.assertRaises(TypeError):
+            vdf.binary_load(b'aaaa')
+            vdf.binary_load(1234)
+            vdf.binary_load(BytesIO(b'aaaa'), b'bbbb')
+
+    def test_loads_params_invalid(self):
+        with self.assertRaises(TypeError):
+            vdf.binary_loads([])
+            vdf.binary_loads(11111)
+            vdf.binary_loads(BytesIO())
+            vdf.binary_load(b'', b'bbbb')
 
     def test_loads_unbalanced_nesting(self):
         with self.assertRaises(SyntaxError):

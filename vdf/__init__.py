@@ -8,8 +8,14 @@ import re
 import sys
 import struct
 from binascii import crc32
-from io import StringIO as unicodeIO
 from io import BytesIO
+from io import StringIO as unicodeIO
+
+try:
+    from collections.abc import Mapping
+except:
+    from collections import Mapping
+
 from vdf.vdict import VDFDict
 
 # Py2 & Py3 compatibility
@@ -72,7 +78,7 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
     same key into one instead of overwriting. You can se this to ``False`` if you are
     using ``VDFDict`` and need to preserve the duplicates.
     """
-    if not issubclass(mapper, dict):
+    if not issubclass(mapper, Mapping):
         raise TypeError("Expected mapper to be subclass of dict, got %s" % type(mapper))
     if not hasattr(fp, 'readline'):
         raise TypeError("Expected fp to be a file-like object supporting line iteration")
@@ -200,7 +206,7 @@ def dumps(obj, pretty=False, escaped=True):
     """
     Serialize ``obj`` to a VDF formatted ``str``.
     """
-    if not isinstance(obj, dict):
+    if not isinstance(obj, Mapping):
         raise TypeError("Expected data to be an instance of``dict``")
     if not isinstance(pretty, bool):
         raise TypeError("Expected pretty to be of type bool")
@@ -215,7 +221,7 @@ def dump(obj, fp, pretty=False, escaped=True):
     Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
     """
-    if not isinstance(obj, dict):
+    if not isinstance(obj, Mapping):
         raise TypeError("Expected data to be an instance of``dict``")
     if not hasattr(fp, 'write'):
         raise TypeError("Expected fp to have write() method")
@@ -239,7 +245,7 @@ def _dump_gen(data, pretty=False, escaped=True, level=0):
         if escaped and isinstance(key, string_type):
             key = _escape(key)
 
-        if isinstance(value, dict):
+        if isinstance(value, Mapping):
             yield '%s"%s"\n%s{\n' % (line_indent, key, line_indent)
             for chunk in _dump_gen(value, pretty, escaped, level+1):
                 yield chunk
@@ -295,12 +301,8 @@ def binary_loads(b, mapper=dict, merge_duplicate_keys=True, alt_format=False, ra
     """
     if not isinstance(b, bytes):
         raise TypeError("Expected s to be bytes, got %s" % type(b))
-    if not issubclass(mapper, dict):
-        raise TypeError("Expected mapper to be subclass of dict, got %s" % type(mapper))
 
-    fp = BytesIO(b)
-
-    return binary_load(fp, mapper, merge_duplicate_keys, alt_format, raise_on_remaining)
+    return binary_load(BytesIO(b), mapper, merge_duplicate_keys, alt_format, raise_on_remaining)
 
 def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, raise_on_remaining=False):
     """
@@ -317,7 +319,7 @@ def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, ra
     """
     if not hasattr(fp, 'read') or not hasattr(fp, 'tell') or not hasattr(fp, 'seek'):
         raise TypeError("Expected fp to be a file-like object with tell()/seek() and read() returning bytes")
-    if not issubclass(mapper, dict):
+    if not issubclass(mapper, Mapping):
         raise TypeError("Expected mapper to be subclass of dict, got %s" % type(mapper))
 
     # helpers
@@ -415,12 +417,16 @@ def binary_dumps(obj, alt_format=False):
     """
     Serialize ``obj`` to a binary VDF formatted ``bytes``.
     """
-    return b''.join(_binary_dump_gen(obj, alt_format=alt_format))
+    buf = BytesIO()
+    binary_dump(obj, buf, alt_format)
+    return buf.getvalue()
 
 def binary_dump(obj, fp, alt_format=False):
     """
     Serialize ``obj`` to a binary VDF formatted ``bytes`` and write it to ``fp`` filelike object
     """
+    if not isinstance(obj, Mapping):
+        raise TypeError("Expected obj to be type of Mapping")
     if not hasattr(fp, 'write'):
         raise TypeError("Expected fp to have write() method")
 
@@ -442,7 +448,7 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
         else:
             raise TypeError("dict keys must be of type str, got %s" % type(key))
 
-        if isinstance(value, dict):
+        if isinstance(value, Mapping):
             yield BIN_NONE + key + BIN_NONE
             for chunk in _binary_dump_gen(value, level+1, alt_format=alt_format):
                 yield chunk
