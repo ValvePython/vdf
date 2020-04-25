@@ -346,7 +346,6 @@ def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, ra
 
         # decode string
         result = buf[:end]
-        print(repr(result))
 
         if wide:
             result = result.decode('utf-16')
