@@ -1,7 +1,7 @@
 """
 Module for deserializing/serializing to and from VDF
 """
-__version__ = "3.2"
+__version__ = "3.3"
 __author__ = "Rossen Georgiev"
 
 import re
