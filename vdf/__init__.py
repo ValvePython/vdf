@@ -90,7 +90,7 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                              r'([ \t]*('
                              r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
                              r'|(?P<val>(?:(?<!/)/(?!/)|[a-z0-9\-\_\\\?\*\.$<>])+)'
-                             r'|(?P<eblock>{[ \t]*})'
+                             r'|(?P<sblock>{[ \t]*)(?P<eblock>})?'
                              r'))?',
                              flags=re.I)
 
@@ -149,9 +149,10 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                     stack[-1][key] = _m
 
                 if match.group('eblock') is None:
-                    # only expect a bracket if the block is not closed on the same line
+                    # only expect a bracket if it's not already closed or on the same line
                     stack.append(_m)
-                    expect_bracket = True
+                    if match.group('sblock') is None:
+                        expect_bracket = True
 
             # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
             else:

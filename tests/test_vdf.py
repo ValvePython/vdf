@@ -428,6 +428,41 @@ class testcase_VDF(unittest.TestCase):
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
         self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
+    def test_inline_opening_bracker(self):
+        INPUT = '''
+        "root1" {
+            "key1" {
+            }
+            key2 "value2"
+            "key3" value3
+        }
+        root2 { }
+        root3 {  
+            "key1" "value1"
+            key2 {   
+
+            }
+            "key3" value3
+        }
+        '''
+
+        EXPECTED = {
+            'root1': {
+                'key1': {},
+                'key2': 'value2',
+                'key3': 'value3',
+            },
+            'root2': {},
+            'root3': {
+                'key1': 'value1',
+                'key2': {},
+                'key3': 'value3',
+            }
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
+
 class testcase_VDF_other(unittest.TestCase):
     def test_dumps_pretty_output(self):
         tests = [
