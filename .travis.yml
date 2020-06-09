@@ -52,9 +52,7 @@ jobs:
 install:
     - pip install mock pytest==3.2.1 pytest-cov==2.5.1
     - pip install coveralls
-    - pip install scrutinizer-ocular
 script:
     - PYTHONHASHSEED=0 pytest --cov=vdf tests
 after_success:
     - coveralls
-    - ocular --data-file ".coverage"
