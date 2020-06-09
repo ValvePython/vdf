@@ -1,8 +1,9 @@
-|pypi| |license| |coverage| |scru| |master_build|
+| |pypi| |license| |coverage| |master_build|
+| |sonar_maintainability| |sonar_reliability| |sonar_security|
 
 Pure python module for (de)serialization to and from VDF that works just like ``json``.
 
-Tested and works on ``python2.7``, ``python3.3+``, ``pypy`` and ``pypy3``.
+Tested and works on ``py2.7``, ``py3.3+``, ``pypy`` and ``pypy3``.
 
 VDF is Valve's KeyValue text file format
 
@@ -146,9 +147,17 @@ of reassign the value to the existing key.
     :target: https://coveralls.io/r/ValvePython/vdf?branch=master
     :alt: Test coverage
 
-.. |scru| image:: https://scrutinizer-ci.com/g/ValvePython/vdf/badges/quality-score.png?b=master
-    :target: https://scrutinizer-ci.com/g/ValvePython/vdf/?branch=master
-    :alt: Scrutinizer score
+.. |sonar_maintainability| image:: https://sonarcloud.io/api/project_badges/measure?project=ValvePython_vdf&metric=sqale_rating
+    :target: https://sonarcloud.io/dashboard?id=ValvePython_vdf
+    :alt: SonarCloud Rating
+
+.. |sonar_reliability| image:: https://sonarcloud.io/api/project_badges/measure?project=ValvePython_vdf&metric=reliability_rating
+    :target: https://sonarcloud.io/dashboard?id=ValvePython_vdf
+    :alt: SonarCloud Rating
+
+.. |sonar_security| image:: https://sonarcloud.io/api/project_badges/measure?project=ValvePython_vdf&metric=security_rating
+    :target: https://sonarcloud.io/dashboard?id=ValvePython_vdf
+    :alt: SonarCloud Rating
 
 .. |master_build| image:: https://img.shields.io/travis/ValvePython/vdf/master.svg?style=flat&label=master%20build
     :target: http://travis-ci.org/ValvePython/vdf
