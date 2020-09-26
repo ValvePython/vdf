@@ -330,6 +330,16 @@ class testcase_VDF(unittest.TestCase):
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
         self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
+    def test_space_for_unquoted(self):
+        INPUT = 'a b c d   \n efg h i\t // j k\n'
+        EXPECTED= {
+            'a': 'b c d',
+            'efg': 'h i',
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+        self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
+
     def test_merge_multiple_keys_on(self):
         INPUT = '''
         a
@@ -437,9 +447,9 @@ class testcase_VDF(unittest.TestCase):
             "key3" value3
         }
         root2 { }
-        root3 {  
+        root3 {
             "key1" "value1"
-            key2 {   
+            key2 {
 
             }
             "key3" value3

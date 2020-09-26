@@ -89,7 +89,7 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
     re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])+)"|(?P<key>#?[a-z0-9\-\_\\\?$%<>]+))'
                              r'([ \t]*('
                              r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
-                             r'|(?P<val>(?:(?<!/)/(?!/)|[a-z0-9\-\_\\\?\*\.$<>])+)'
+                             r'|(?P<val>(?:(?<!/)/(?!/)|[a-z0-9\-\_\\\?\*\.$<> ])+)'
                              r'|(?P<sblock>{[ \t]*)(?P<eblock>})?'
                              r'))?',
                              flags=re.I)
@@ -135,7 +135,14 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                                       (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
-            val = match.group('val') if match.group('qval') is None else match.group('qval')
+            if match.group('qval') is None:
+                val = match.group('val')
+                if val is not None:
+                    val = val.rstrip()
+                    if val == "":
+                        val = None
+            else:
+                val = match.group('qval')
 
             if escaped:
                 key = _unescape(key)
