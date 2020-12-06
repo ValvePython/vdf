@@ -135,14 +135,13 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                                       (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
-            if match.group('qval') is None:
+            val = match.group('qval')
+            if val is None:
                 val = match.group('val')
                 if val is not None:
                     val = val.rstrip()
                     if val == "":
                         val = None
-            else:
-                val = match.group('qval')
 
             if escaped:
                 key = _unescape(key)
