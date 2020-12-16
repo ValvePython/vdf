@@ -19,6 +19,7 @@ on:
       - 'LICENSE'
       - 'requirements.txt'
       - 'vdf2json/**'
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
