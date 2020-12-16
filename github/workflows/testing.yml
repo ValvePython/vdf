@@ -1,0 +1,55 @@
+name: Pkg Tests
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - '.gitignore'
+      - '*.md'
+      - '*.rst'
+      - 'LICENSE'
+      - 'requirements.txt'
+      - 'vdf2json/**'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - '.gitignore'
+      - '*.md'
+      - '*.rst'
+      - 'LICENSE'
+      - 'requirements.txt'
+      - 'vdf2json/**'
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
+        include:
+          - os: ubuntu-latest
+            python-version: pypy2
+          - os: ubuntu-latest
+            python-version: pypy3
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python Env
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+      - name: Install dependencies
+        run: |
+          pip install pytest==3.2.1 pytest-cov==2.5.1
+      - name: Run Tests
+        env:
+          PYTHONHASHSEED: "0"
+        run: |
+          pytest --cov=vdf tests
+      - name: Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        run: |
+          coveralls
