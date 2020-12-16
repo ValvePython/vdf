@@ -42,7 +42,8 @@ jobs:
         run: python -c "import sys; print(sys.version)"
       - name: Install dependencies
         run: |
-          pip install pytest==3.2.1 pytest-cov==2.5.1
+          pip install mock pytest==3.2.1 pytest-cov==2.5.1
+          pip install coveralls
       - name: Run Tests
         env:
           PYTHONHASHSEED: "0"
