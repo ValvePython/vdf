@@ -159,8 +159,8 @@ of reassign the value to the existing key.
     :target: https://sonarcloud.io/dashboard?id=ValvePython_vdf
     :alt: SonarCloud Rating
 
-.. |master_build| image:: https://img.shields.io/travis/ValvePython/vdf/master.svg?style=flat&label=master%20build
-    :target: http://travis-ci.org/ValvePython/vdf
+.. |master_build| image:: https://github.com/ValvePython/vdf/workflows/Tests/badge.svg?branch=master
+    :target: https://github.com/ValvePython/vdf/actions?query=workflow%3A%22Tests%22+branch%3Amaster
     :alt: Build status of master branch
 
 .. _DuplicateOrderedDict: https://github.com/rossengeorgiev/dota2_notebooks/blob/master/DuplicateOrderedDict_for_VDF.ipynb
