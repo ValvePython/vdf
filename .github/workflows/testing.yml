@@ -1,4 +1,4 @@
-name: Pkg Tests
+name: Tests
 
 on:
   push:
