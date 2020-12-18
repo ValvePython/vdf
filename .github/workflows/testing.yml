@@ -51,9 +51,9 @@ jobs:
           pytest --cov=vdf tests
       - name: Upload to Coveralls
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ env.GITHUB_SHA }}.${{ env.GITHUB_RUN_NUMBER }}
+          #COVERALLS_FLAG_NAME: ${{ env.GITHUB_SHA }}.${{ env.GITHUB_RUN_NUMBER }}
           COVERALLS_PARALLEL: true
         run: |
           coveralls
@@ -61,12 +61,15 @@ jobs:
     name: Finish Coveralls
     needs: test
     runs-on: ubuntu-latest
-    container: python:3-slim
     steps:
+    - name: Set up Python Env
+      uses: actions/setup-python@v2.1.4 # FIXME: Use "v2" tag once https://github.com/actions/setup-python/issues/171 is resolved.
+      with:
+        python-version: 3.8
     - name: Finished
       run: |
-        pip3 install --upgrade coveralls
+        pip install --upgrade coveralls
         coveralls --finish
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
