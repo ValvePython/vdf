@@ -53,7 +53,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ GITHUB_RUN_ID }}.${{ GGITHUB_RUN_NUMBER }}
+          COVERALLS_FLAG_NAME: ${{ env.GITHUB_RUN_ID }}.${{ env.GITHUB_RUN_NUMBER }}
           COVERALLS_PARALLEL: true
         run: |
           coveralls
