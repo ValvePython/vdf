@@ -35,8 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python Env
-      # FIXME: Use "v2" tag once https://github.com/actions/setup-python/issues/171 is resolved.
-      - uses: actions/setup-python@v2.1.4
+        uses: actions/setup-python@v2.1.4 # FIXME: Use "v2" tag once https://github.com/actions/setup-python/issues/171 is resolved.
         with:
           python-version: ${{ matrix.python-version }}
       - name: Display Python version
