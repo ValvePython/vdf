@@ -49,9 +49,24 @@ jobs:
           PYTHONHASHSEED: "0"
         run: |
           pytest --cov=vdf tests
-      - name: Coveralls
+      - name: Upload to Coveralls
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ GITHUB_RUN_ID }}.${{ GGITHUB_RUN_NUMBER }}
+          COVERALLS_PARALLEL: true
         run: |
           coveralls
+  coveralls:
+    name: Finish Coveralls
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+    - name: Finished
+      run: |
+        pip3 install --upgrade coveralls
+        coveralls --finish
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
