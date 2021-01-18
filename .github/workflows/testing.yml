@@ -52,9 +52,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_PARALLEL: true
-#         COVERALLS_FLAG_NAME: "${{ matrix.os }},${{ matrix.python-version }}"
+          COVERALLS_FLAG_NAME: "${{ matrix.os }},${{ matrix.python-version }}"
         run: |
-          coveralls
+          coveralls --service=github
 
   coveralls:
     name: Finish Coveralls
