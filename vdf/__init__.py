@@ -86,10 +86,11 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
     stack = [mapper()]
     expect_bracket = False
 
-    re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])+)"|(?P<key>#?[a-z0-9\-\_\\\?]+))'
+    re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])*)"|(?P<key>#?[a-z0-9\-\_\\\?$%<>]+))'
                              r'([ \t]*('
                              r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
-                             r'|(?P<val>[a-z0-9\-\_\\\?\*\.]+)'
+                             r'|(?P<val>(?:(?<!/)/(?!/)|[a-z0-9\-\_\\\?\*\.$<> ])+)'
+                             r'|(?P<sblock>{[ \t]*)(?P<eblock>})?'
                              r'))?',
                              flags=re.I)
 
@@ -134,7 +135,13 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                                       (getattr(fp, 'name', '<%s>' % fp.__class__.__name__), lineno, 0, line))
 
             key = match.group('key') if match.group('qkey') is None else match.group('qkey')
-            val = match.group('val') if match.group('qval') is None else match.group('qval')
+            val = match.group('qval')
+            if val is None:
+                val = match.group('val')
+                if val is not None:
+                    val = val.rstrip()
+                    if val == "":
+                        val = None
 
             if escaped:
                 key = _unescape(key)
@@ -147,8 +154,11 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
                     _m = mapper()
                     stack[-1][key] = _m
 
-                stack.append(_m)
-                expect_bracket = True
+                if match.group('eblock') is None:
+                    # only expect a bracket if it's not already closed or on the same line
+                    stack.append(_m)
+                    if match.group('sblock') is None:
+                        expect_bracket = True
 
             # we've matched a simple keyvalue pair, map it to the last dict obj in the stack
             else:
