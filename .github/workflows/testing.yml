@@ -35,41 +35,38 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python Env
-        uses: actions/setup-python@v2.1.4 # FIXME: Use "v2" tag once https://github.com/actions/setup-python/issues/171 is resolved.
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
       - name: Install dependencies
         run: |
-          pip install mock pytest==3.2.1 pytest-cov==2.5.1
-          pip install coveralls
+          make init
       - name: Run Tests
         env:
           PYTHONHASHSEED: "0"
         run: |
-          pytest --cov=vdf tests
+          make test
       - name: Upload to Coveralls
         env:
-          #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-          #COVERALLS_FLAG_NAME: ${{ env.GITHUB_SHA }}.${{ env.GITHUB_RUN_NUMBER }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_PARALLEL: true
+          COVERALLS_FLAG_NAME: "${{ matrix.os }},${{ matrix.python-version }}"
         run: |
           coveralls
+
   coveralls:
     name: Finish Coveralls
     needs: test
     runs-on: ubuntu-latest
+    container: python:3-slim
     steps:
-    - name: Set up Python Env
-      uses: actions/setup-python@v2.1.4 # FIXME: Use "v2" tag once https://github.com/actions/setup-python/issues/171 is resolved.
-      with:
-        python-version: 3.8
-    - name: Finished
+    - name: Install coveralls
       run: |
-        pip install --upgrade coveralls
-        coveralls --finish
+        pip3 install --upgrade coveralls
+    - name: Send coverage finish to coveralls.io
       env:
-        #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        coveralls --finish

@@ -20,7 +20,7 @@ init:
 
 test:
 	rm -f .coverage vdf/*.pyc tests/*.pyc
-	PYTHONHASHSEED=0 python -m pytest --cov=vdf tests
+	PYTHONHASHSEED=0 python -m pytest --tb=short --cov-config .coveragerc --cov=vdf tests
 
 pylint:
 	pylint -r n -f colorized vdf || true
