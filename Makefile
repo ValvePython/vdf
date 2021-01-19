@@ -16,7 +16,7 @@ help:
 	@echo "$$HELPBODY"
 
 init:
-	pip install -r requirements.txt
+	pip install -r dev_requirements.txt
 
 test:
 	rm -f .coverage vdf/*.pyc tests/*.pyc
