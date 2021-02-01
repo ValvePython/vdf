@@ -18,9 +18,15 @@ help:
 init:
 	pip install -r dev_requirements.txt
 
+COVOPTS = --cov-config .coveragerc --cov=vdf
+
+ifeq ($(NOCOV), 1)
+	COVOPTS =
+endif
+
 test:
 	rm -f .coverage vdf/*.pyc tests/*.pyc
-	PYTHONHASHSEED=0 python -m pytest --tb=short --cov-config .coveragerc --cov=vdf tests
+	PYTHONHASHSEED=0 pytest --tb=short $(COVOPTS) tests
 
 pylint:
 	pylint -r n -f colorized vdf || true
