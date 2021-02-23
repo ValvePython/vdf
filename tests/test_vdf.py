@@ -124,7 +124,7 @@ class testcase_routine_parse(unittest.TestCase):
         result = vdf.loads(vdf.BOMS + '"asd" "123"')
         self.assertEqual(result, {'asd': '123'})
 
-        if sys.version_info[0] is 2:
+        if sys.version_info[0] == 2:
             result = vdf.loads(vdf.BOMS_UNICODE + '"asd" "123"')
             self.assertEqual(result, {'asd': '123'})
 
