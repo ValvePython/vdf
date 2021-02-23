@@ -5,14 +5,18 @@ if sys.version_info[0] >= 3:
     _iter_values = 'values'
     _range = range
     _string_type = str
-    import collections as _c
-    class _kView(_c.KeysView):
+    try:
+        import collections.abc as _abc
+    except ImportError:
+        import collections as _abc
+
+    class _kView(_abc.KeysView):
         def __iter__(self):
             return self._mapping.iterkeys()
-    class _vView(_c.ValuesView):
+    class _vView(_abc.ValuesView):
         def __iter__(self):
             return self._mapping.itervalues()
-    class _iView(_c.ItemsView):
+    class _iView(_abc.ItemsView):
         def __iter__(self):
             return self._mapping.iteritems()
 else:
