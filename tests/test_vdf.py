@@ -1,6 +1,10 @@
 import unittest
-import mock
 import sys
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 try:
         from StringIO import StringIO
