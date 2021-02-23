@@ -1,4 +1,4 @@
-mock
+mock; python_version < '3.3'
 
 coverage>=5.0; python_version == '2.7' or python_version >= '3.5'
 pytest-cov>=2.7.0; python_version == '2.7' or python_version >= '3.5'
