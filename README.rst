@@ -36,8 +36,8 @@ Problems & solutions
   that can be used as mapper instead of ``dict``. See the example section for details.
 
 - By default de-serialization will return a ``dict``, which doesn't preserve nor guarantee
-  key order due to `hash randomization`_. If key order is important then
-  I suggest using ``collections.OrderedDict``, or ``vdf.VDFDict``.
+  key order on Python versions prior to 3.6, due to `hash randomization`_. If key order is
+  important on old Pythons, I suggest using ``collections.OrderedDict``, or ``vdf.VDFDict``.
 
 Example usage
 -------------
