@@ -150,6 +150,9 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
             if val is None:
                 if merge_duplicate_keys and key in stack[-1]:
                     _m = stack[-1][key]
+                    # we've descended a level deeper, if value is str, we have to overwrite it to mapper
+                    if not isinstance(_m, mapper):
+                        _m = stack[-1][key] = mapper()
                 else:
                     _m = mapper()
                     stack[-1][key] = _m
