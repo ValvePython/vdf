@@ -477,6 +477,33 @@ class testcase_VDF(unittest.TestCase):
         self.assertEqual(vdf.loads(INPUT), EXPECTED)
         self.assertEqual(vdf.loads(INPUT, escaped=False), EXPECTED)
 
+    def test_duplicate_key_with_value_from_str_to_mapper(self):
+        INPUT = r'''
+        level1
+        {
+            key1 text1
+            key2 text2
+        }
+        level1
+        {
+            key2
+            {
+                key3 text3
+            }
+        }
+        '''
+
+        EXPECTED = {
+            "level1": {
+                "key1": "text1",
+                "key2": {
+                    "key3": "text3"
+                }
+            }
+        }
+
+        self.assertEqual(vdf.loads(INPUT), EXPECTED)
+
 class testcase_VDF_other(unittest.TestCase):
     def test_dumps_pretty_output(self):
         tests = [
