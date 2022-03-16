@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10]
+        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9, '3.10']
         no-coverage: [0]
         include:
           - os: ubuntu-latest
