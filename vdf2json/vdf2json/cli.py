@@ -5,6 +5,7 @@ import sys
 import json
 import vdf
 import codecs
+import io
 from collections import OrderedDict
 
 
@@ -28,13 +29,13 @@ def main():
         args.infile.close()
         args.infile = codecs.open(args.infile.name, 'r', encoding=args.ei)
     else:
-        args.infile = codecs.getreader(args.ei)(sys.stdin)
+        args.infile = io.TextIOWrapper(sys.stdin.buffer, args.ei)
 
     if args.outfile is not sys.stdout:
         args.outfile.close()
         args.outfile = codecs.open(args.outfile.name, 'w', encoding=args.eo)
     else:
-        args.outfile = codecs.getwriter(args.eo)(sys.stdout)
+        args.outfile = io.TextIOWrapper(sys.stdout.buffer, args.eo)
 
     data = vdf.loads(args.infile.read(), mapper=OrderedDict)
 
