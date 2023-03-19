@@ -86,10 +86,10 @@ def parse(fp, mapper=dict, merge_duplicate_keys=True, escaped=True):
     stack = [mapper()]
     expect_bracket = False
 
-    re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])*)"|(?P<key>#?[a-z0-9\-\_\\\?$%<>]+))'
+    re_keyvalue = re.compile(r'^("(?P<qkey>(?:\\.|[^\\"])*)"|(?P<key>#?[a-z0-9\-\_\\\?\+$%<>]+))'
                              r'([ \t]*('
                              r'"(?P<qval>(?:\\.|[^\\"])*)(?P<vq_end>")?'
-                             r'|(?P<val>(?:(?<!/)/(?!/)|[a-z0-9\-\_\\\?\*\.$<> ])+)'
+                             r'|(?P<val>(?:(?<!/)/(?!/)|[a-z0-9\-\_\\\?\*\.\|$<> ])+)'
                              r'|(?P<sblock>{[ \t]*)(?P<eblock>})?'
                              r'))?',
                              flags=re.I)
