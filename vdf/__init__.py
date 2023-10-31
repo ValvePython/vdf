@@ -211,7 +211,7 @@ def load(fp, **kwargs):
     return parse(fp, **kwargs)
 
 
-def dumps(obj, pretty=False, escaped=True):
+def dumps(obj, pretty=False, escaped=True, acf=False):
     """
     Serialize ``obj`` to a VDF formatted ``str``.
     """
@@ -222,10 +222,10 @@ def dumps(obj, pretty=False, escaped=True):
     if not isinstance(escaped, bool):
         raise TypeError("Expected escaped to be of type bool")
 
-    return ''.join(_dump_gen(obj, pretty, escaped))
+    return ''.join(_dump_gen(obj, pretty, escaped, acf))
 
 
-def dump(obj, fp, pretty=False, escaped=True):
+def dump(obj, fp, pretty=False, escaped=True, acf=False):
     """
     Serialize ``obj`` as a VDF formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
@@ -239,16 +239,20 @@ def dump(obj, fp, pretty=False, escaped=True):
     if not isinstance(escaped, bool):
         raise TypeError("Expected escaped to be of type bool")
 
-    for chunk in _dump_gen(obj, pretty, escaped):
+    for chunk in _dump_gen(obj, pretty, escaped, acf):
         fp.write(chunk)
 
 
-def _dump_gen(data, pretty=False, escaped=True, level=0):
+def _dump_gen(data, pretty=False, escaped=True, acf=False, level=0):
     indent = "\t"
     line_indent = ""
+    val_sep = " "
 
     if pretty:
         line_indent = indent * level
+
+    if acf:
+        val_sep = "\t\t"
 
     for key, value in data.items():
         if escaped and isinstance(key, string_type):
@@ -256,14 +260,14 @@ def _dump_gen(data, pretty=False, escaped=True, level=0):
 
         if isinstance(value, Mapping):
             yield '%s"%s"\n%s{\n' % (line_indent, key, line_indent)
-            for chunk in _dump_gen(value, pretty, escaped, level+1):
+            for chunk in _dump_gen(value, pretty, escaped, acf, level+1):
                 yield chunk
             yield "%s}\n" % line_indent
         else:
             if escaped and isinstance(value, string_type):
                 value = _escape(value)
 
-            yield '%s"%s" "%s"\n' % (line_indent, key, value)
+            yield '%s"%s"%s"%s"\n' % (line_indent, key, val_sep, value)
 
 
 # binary VDF
