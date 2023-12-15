@@ -361,7 +361,7 @@ def binary_load(fp, mapper=dict, merge_duplicate_keys=True, alt_format=False, ra
         result = buf[:end]
 
         if wide:
-            result = result.decode('utf-16')
+            result = result.decode('utf-16le')
         elif bytes is not str:
             result = result.decode('utf-8', 'replace')
         else:
@@ -469,7 +469,7 @@ def _binary_dump_gen(obj, level=0, alt_format=False):
                 value = value.encode('utf-8') + BIN_NONE
                 yield BIN_STRING
             except:
-                value = value.encode('utf-16') + BIN_NONE*2
+                value = value.encode('utf-16le') + BIN_NONE*2
                 yield BIN_WIDESTRING
             yield key + BIN_NONE + value
         elif isinstance(value, float):
